@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.openclassrooms.arista"
+    namespace = "com.openclassrooms.projet8vitesse"
     compileSdk = 34
 
     defaultConfig {

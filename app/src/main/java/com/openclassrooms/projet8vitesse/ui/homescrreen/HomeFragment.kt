@@ -9,7 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.openclassrooms.arista.databinding.FragmentHomeBinding
+import com.openclassrooms.projet8vitesse.databinding.FragmentHomeBinding
 import kotlinx.coroutines.launch
 
 
