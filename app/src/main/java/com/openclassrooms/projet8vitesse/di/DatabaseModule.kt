@@ -9,6 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import android.content.Context
 import com.openclassrooms.projet8vitesse.data.local.AppDatabase
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 // Ce module configure Room pour l'injection de dépendances
 @Module
@@ -21,9 +22,9 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(context: Context): AppDatabase {
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(
-            context.applicationContext,
+            context,
             AppDatabase::class.java,
             DATABASE_NAME
         ).build()

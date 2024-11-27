@@ -7,7 +7,9 @@ import androidx.fragment.app.commit
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.ActivityMainBinding
 import com.openclassrooms.projet8vitesse.ui.homescrreen.HomeFragment
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 

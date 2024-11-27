@@ -10,7 +10,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.openclassrooms.arista"
+        applicationId = "com.openclassrooms.projet8vitesse"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
