@@ -28,6 +28,11 @@ class DetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Configurer l'action pour le bouton de retour
+        binding.appBar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
+
         // TODO: Ajouter l'action pour supprimer un candidat après création du fichier XML
         /*
         binding.deleteButton.setOnClickListener {

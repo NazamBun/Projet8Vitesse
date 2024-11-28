@@ -8,4 +8,5 @@
     <string name="candidate_name_placeholder">Prénom NOM</string>
     <string name="candidate_photo">photo du candidat</string>
     <string name="empty_state_message">Aucun candidat</string>
+    <string name="detail_screen_title">Ajouter un candidat</string>
 </resources>
