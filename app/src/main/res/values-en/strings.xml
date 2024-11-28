@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_all">All</string>
+    <string name="tab_favorites">Favorites</string>
+
+    <string name="search_hint">Search</string>
+</resources>

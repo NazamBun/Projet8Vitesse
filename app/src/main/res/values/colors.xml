@@ -2,4 +2,10 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="primary">#6750A4</color>
+    <color name="onPrimary">#FFFFFFFF</color>
+    <color name="primaryContainer">#EADDFF</color>
+    <color name="onPrimaryContainer">#21005D</color>
+    <color name="primaryFixed">#EADDFF</color>
+
 </resources>
