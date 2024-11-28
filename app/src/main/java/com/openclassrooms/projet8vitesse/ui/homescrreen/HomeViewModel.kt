@@ -2,14 +2,15 @@ package com.openclassrooms.projet8vitesse.ui.homescrreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.openclassrooms.projet8vitesse.data.local.entities.CandidateEntity
 import com.openclassrooms.projet8vitesse.repository.CandidateRepository
 import com.openclassrooms.projet8vitesse.utils.FilterType
+import com.openclassrooms.projet8vitesse.utils.toCandidateList
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,8 +20,21 @@ import javax.inject.Inject
  * Ce ViewModel gère les candidats et les filtre en fonction du type (tous ou favoris).
  *
  * @property repository Le repository pour accéder aux données des candidats.
- */@HiltViewModel
-class HomeViewModel @Inject constructor(private val repository: CandidateRepository): ViewModel() {
+ */
+@HiltViewModel
+class HomeViewModel @Inject constructor(private val repository: CandidateRepository) : ViewModel() {
+
+    /**
+     * État de chargement des données.
+     */
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> get() = _isLoading
+
+    /**
+     * État vide (aucun candidat à afficher).
+     */
+    private val _isEmpty = MutableStateFlow(false)
+    val isEmpty: StateFlow<Boolean> get() = _isEmpty
 
     /**
      * État du filtre actuel (tous ou favoris).
@@ -29,41 +43,28 @@ class HomeViewModel @Inject constructor(private val repository: CandidateReposit
     val filter: StateFlow<FilterType> = _filter
 
     /**
-     * Liste des candidats filtrés en fonction de l'état du filtre.
-     * - `FilterType.ALL` : Tous les candidats.
-     * - `FilterType.FAVORITES` : Candidats favoris uniquement.
+     * Liste des candidats filtrés en fonction du filtre actuel.
      */
     val filteredCandidates = _filter.flatMapLatest { filterType ->
         when (filterType) {
             FilterType.ALL -> repository.getAllCandidates()
             FilterType.FAVORITES -> repository.getFavoriteCandidates()
+        }.map { entities ->
+            _isLoading.value = false
+            _isEmpty.value = entities.isEmpty()
+            entities.toCandidateList() // Mapper les entités vers les modèles métier
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Lazily,
-        initialValue = emptyList()
-    )
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     /**
-     * Liste de tous les candidats récupérés depuis le repository.
-     */
-    private val _allCandidates = MutableStateFlow<List<CandidateEntity>>(emptyList())
-    val allCandidates: StateFlow<List<CandidateEntity>> = _allCandidates
-
-    /**
-     * Liste des candidats favoris récupérés depuis le repository.
-     */
-    private val _favoriteCandidates = MutableStateFlow<List<CandidateEntity>>(emptyList())
-    val favoriteCandidates: StateFlow<List<CandidateEntity>> = _favoriteCandidates
-
-    /**
-     * Charge tous les candidats depuis le repository.
-     * Les données sont collectées et stockées dans `_allCandidates`.
+     * Charge les données des candidats depuis le repository.
      */
     fun loadCandidates() {
         viewModelScope.launch {
+            _isLoading.value = true
             repository.getAllCandidates().collect { candidates ->
-                _allCandidates.value = candidates
+                _isLoading.value = false
+                _isEmpty.value = candidates.isEmpty()
             }
         }
     }
@@ -75,17 +76,5 @@ class HomeViewModel @Inject constructor(private val repository: CandidateReposit
      */
     fun setFilter(filterType: FilterType) {
         _filter.value = filterType
-    }
-
-    /**
-     * Charge les candidats favoris depuis le repository.
-     * Les données sont collectées et stockées dans `_favoriteCandidates`.
-     */
-    fun loadFavoritesCandidates() {
-        viewModelScope.launch {
-            repository.getFavoriteCandidates().collect { candidates ->
-                _favoriteCandidates.value = candidates
-            }
-        }
     }
 }

@@ -2,7 +2,6 @@ package com.openclassrooms.projet8vitesse.ui.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.compose.ui.layout.Layout
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -36,7 +35,7 @@ class CandidateAdapter(
         fun bind(candidate: Candidate, onItemClicked: (Candidate) -> Unit) {
             // Met à jour les vues avec les données du candidat
             binding.candidateName.text = "${candidate.firstName} ${candidate.lastName}"
-            binding.candidateNote.text = candidate.note
+            binding.candidateNote.text = candidate.notes
             binding.candidatePhoto.setImageResource(R.drawable.ic_person) // Placeholder pour la photo
 
             // Définit un clic sur la vue pour exécuter le callback

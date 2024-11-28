@@ -9,9 +9,11 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.tabs.TabLayout
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentHomeBinding
+import com.openclassrooms.projet8vitesse.ui.adapter.CandidateAdapter
 import com.openclassrooms.projet8vitesse.utils.FilterType
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -23,11 +25,14 @@ class HomeFragment : Fragment() {
 
     private val viewModel: HomeViewModel by viewModels()
 
+    // Adapter pour le RecyclerView
+    private lateinit var candidateAdapter: CandidateAdapter
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -35,58 +40,77 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Initialisation du RecyclerView
+        setupRecyclerView()
+
         // Ajouter les onglets au TabLayout
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(getString(R.string.tab_all)))
-        binding.tabLayout.addTab(
-            binding.tabLayout.newTab().setText(getString(R.string.tab_favorites))
-        )
+        setupTabLayout()
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.allCandidates.collect { candidates ->
-                    // Mettre à jour l'interface utilisateur avec les candidats
-                }
-            }
-        }
+        // Observer les données du ViewModel
+        observeCandidates()
 
-        // Charger les données
+        // Charger les données initiales
         viewModel.loadCandidates()
+    }
 
-        // Écouter les changements d'onglets
+    /**
+     * Configure le RecyclerView avec l'adapter et la disposition des éléments.
+     */
+    private fun setupRecyclerView() {
+        candidateAdapter = CandidateAdapter { candidate ->
+            // Action à effectuer lors du clic sur un candidat
+            // TODO: Naviguer vers le détail du candidat
+        }
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = candidateAdapter
+        }
+    }
+
+    /**
+     * Configure le TabLayout pour gérer les filtres "Tous" et "Favoris".
+     */
+    private fun setupTabLayout() {
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(getString(R.string.tab_all)))
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(getString(R.string.tab_favorites)))
+
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 when (tab.position) {
-                    0 -> {
-                        // Filtrer pour afficher tous les candidats
-                        viewModel.setFilter(FilterType.ALL)
-                    }
-                    1 -> {
-                        // Filtrer pour afficher les candidats favoris
-                        viewModel.setFilter(FilterType.FAVORITES)
-                    }
+                    0 -> viewModel.setFilter(FilterType.ALL)
+                    1 -> viewModel.setFilter(FilterType.FAVORITES)
                 }
             }
 
-            /**
-             * Called when a tab exits the selected state.
-             *
-             * @param tab The tab that was unselected
-             */
-            override fun onTabUnselected(tab: TabLayout.Tab?) {
-                TODO("Not yet implemented")
-            }
-
-            /**
-             * Called when a tab that is already selected is chosen again by the user. Some applications may
-             * use this action to return to the top level of a category.
-             *
-             * @param tab The tab that was reselected.
-             */
-            override fun onTabReselected(tab: TabLayout.Tab?) {
-                TODO("Not yet implemented")
-            }
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
 
+    /**
+     * Observe les données des candidats et met à jour l'adapter.
+     */
+    private fun observeCandidates() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.isLoading.collect { isLoading ->
+                        binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+                    }
+                }
+                launch {
+                    viewModel.isEmpty.collect { isEmpty ->
+                        binding.emptyStateText.visibility = if (isEmpty) View.VISIBLE else View.GONE
+                    }
+                }
+                launch {
+                    viewModel.filteredCandidates.collect { candidates ->
+                        binding.recyclerView.visibility = if (candidates.isEmpty()) View.GONE else View.VISIBLE
+                        candidateAdapter.submitList(candidates)
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {

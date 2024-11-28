@@ -9,7 +9,7 @@ data class CandidateEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val firstName: String,
     val lastName: String,
-    val photoUrl: String?,
+    val photoUri: String?,
     val phoneNumber: String,
     val email: String,
     val dateOfBirth: String,
