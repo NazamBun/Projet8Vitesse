@@ -9,6 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentAddEditBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -31,6 +32,19 @@ class AddEditFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Définir le titre en fonction du mode (Ajout ou Édition)
+        val isEditMode = arguments?.getBoolean("isEditMode", false) ?: false
+        binding.topAppBar.title = if (isEditMode) {
+            getString(R.string.edit_candidate)
+        } else {
+            getString(R.string.add_candidate)
+        }
+
+        // Gestion de l'icône de retour
+        binding.topAppBar.setNavigationOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
 
         // TODO: Ajouter l'action du bouton "saveButton" après avoir créé le fichier XML
         /*
