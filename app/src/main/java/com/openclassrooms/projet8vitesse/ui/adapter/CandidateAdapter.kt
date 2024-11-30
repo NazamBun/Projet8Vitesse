@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.openclassrooms.projet8vitesse.R
-import com.openclassrooms.projet8vitesse.data.local.model.Candidate
+import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import com.openclassrooms.projet8vitesse.databinding.ItemCandidateBinding
 
 

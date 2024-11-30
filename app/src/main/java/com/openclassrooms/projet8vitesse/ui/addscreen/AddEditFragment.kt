@@ -33,6 +33,8 @@ class AddEditFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
+
         // Définir le titre en fonction du mode (Ajout ou Édition)
         val isEditMode = arguments?.getBoolean("isEditMode", false) ?: false
         binding.topAppBar.title = if (isEditMode) {
@@ -46,13 +48,24 @@ class AddEditFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        // TODO: Ajouter l'action du bouton "saveButton" après avoir créé le fichier XML
-        /*
+
         binding.saveButton.setOnClickListener {
-            val candidate = // Récupérez les données du formulaire
-            viewModel.saveCandidate(candidate)
+            saveCandidate()
         }
-        */
+    }
+
+    /**
+     * Récupère les valeurs des champs de saisie, les valide,
+     * et sauvegarde un nouveau candidat ou met à jour l'existant
+     */
+    private fun saveCandidate() {
+        // Récupérer les valeurs des champs
+        val firstName = binding.tiFirstname.text.toString().trim()
+        val lastName = binding.tiLastname.text.toString().trim()
+        val email = binding.tiEmail.text.toString().trim()
+        val phoneNumber = binding.tiPhone.text.toString().trim()
+        val notes = binding.tiNotes.text.toString().trim()
+        val expectedSalaryString = binding.tiSalary.text.toString().trim()
     }
 
     override fun onDestroyView() {

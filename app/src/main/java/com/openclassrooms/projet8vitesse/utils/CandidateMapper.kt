@@ -1,9 +1,9 @@
 package com.openclassrooms.projet8vitesse.utils
 
-import com.openclassrooms.projet8vitesse.data.local.entities.CandidateEntity
-import com.openclassrooms.projet8vitesse.data.local.model.Candidate
+import com.openclassrooms.projet8vitesse.data.entity.CandidateDto
+import com.openclassrooms.projet8vitesse.domain.model.Candidate
 
-fun CandidateEntity.toCandidate(): Candidate {
+fun CandidateDto.toCandidate(): Candidate {
     return Candidate(
         id = this.id,
         firstName = this.firstName,
@@ -21,6 +21,6 @@ fun CandidateEntity.toCandidate(): Candidate {
 /**
  * Mapper pour convertir une liste de CandidateEntity en une liste de Candidate.
  */
-fun List<CandidateEntity>.toCandidateList(): List<Candidate> {
+fun List<CandidateDto>.toCandidateList(): List<Candidate> {
     return this.map { it.toCandidate() }
 }

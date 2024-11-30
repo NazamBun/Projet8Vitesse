@@ -2,7 +2,7 @@ package com.openclassrooms.projet8vitesse.ui.homescrreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.openclassrooms.projet8vitesse.repository.CandidateRepository
+import com.openclassrooms.projet8vitesse.data.repository.CandidateRepository
 import com.openclassrooms.projet8vitesse.utils.FilterType
 import com.openclassrooms.projet8vitesse.utils.toCandidateList
 import dagger.hilt.android.lifecycle.HiltViewModel

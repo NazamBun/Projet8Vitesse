@@ -83,7 +83,8 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.0.0")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
 
-
+    // Java 8 Time (Instant)
+    implementation(libs.jakewharton.threetenabp)
 
 }
 kapt {
