@@ -1,7 +1,8 @@
 package com.openclassrooms.projet8vitesse.data.convert
 
 import androidx.room.TypeConverter
-import org.threeten.bp.Instant
+import java.time.Instant
+
 
 class InstantConverter {
 

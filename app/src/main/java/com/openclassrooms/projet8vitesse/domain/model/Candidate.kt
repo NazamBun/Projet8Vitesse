@@ -2,7 +2,7 @@ package com.openclassrooms.projet8vitesse.domain.model
 
 import android.graphics.Bitmap
 import com.openclassrooms.projet8vitesse.data.entity.CandidateDto
-import org.threeten.bp.Instant
+import java.time.Instant
 
 data class Candidate(
     val id: Long? = null,
