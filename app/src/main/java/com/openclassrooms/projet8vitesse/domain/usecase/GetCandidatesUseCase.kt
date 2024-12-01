@@ -1,27 +1,24 @@
 package com.openclassrooms.projet8vitesse.domain.usecase
 
-import com.openclassrooms.projet8vitesse.data.repository.CandidateRepository
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
+import com.openclassrooms.projet8vitesse.data.repository.CandidateRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 /**
  * Use Case pour récupérer les candidats avec des filtres optionnels.
- *
- * @param repository Le repository utilisé pour accéder aux données des candidats.
  */
 class GetCandidatesUseCase @Inject constructor(
-    private val repository: CandidateRepository
+    private val candidateRepository: CandidateRepository
 ) {
 
     /**
-     * Exécuter le Use Case pour obtenir les candidats filtrés.
-     *
-     * @param favorite Filtrer par favori (true/false) ou null pour ignorer ce filtre.
-     * @param name Filtrer par nom (partiel ou complet) ou null pour ignorer ce filtre.
-     * @return Un flux contenant la liste des candidats correspondant aux critères.
+     * Récupère une liste de candidats selon les filtres spécifiés.
+     * @param favorite Filtrer par favori (true/false) ou null pour ignorer.
+     * @param name Filtrer par nom (partiel ou complet) ou null pour ignorer.
+     * @return Un flux contenant la liste des candidats correspondant aux filtres.
      */
-    operator fun invoke(favorite: Boolean?, name: String?) : Flow<List<Candidate>> {
-        return repository.getCandidates(favorite, name)
+    fun execute(favorite: Boolean? = null, name: String? = null): Flow<List<Candidate>> {
+        return candidateRepository.getCandidates(favorite, name)
     }
 }
