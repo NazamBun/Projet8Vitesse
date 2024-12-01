@@ -82,6 +82,7 @@ dependencies {
     implementation(kotlin("script-runtime"))
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.0.0")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
     // Java 8 Time (Instant)
     implementation(libs.jakewharton.threetenabp)
