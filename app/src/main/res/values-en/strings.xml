@@ -27,4 +27,6 @@
     <string name="save">Sauvegarder</string>
     <string name="card_content_placeholder">Entrer une date</string>
     <string name="note">Note</string>
+    <string name="all_candidates">Tous</string>
+    <string name="favorite_candidates">Favoris</string>
 </resources>
