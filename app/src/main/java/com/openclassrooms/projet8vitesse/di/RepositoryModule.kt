@@ -2,20 +2,28 @@ package com.openclassrooms.projet8vitesse.di
 
 import com.openclassrooms.projet8vitesse.data.repository.CandidateRepository
 import com.openclassrooms.projet8vitesse.data.repository.CandidateRepositoryImpl
-import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * Module Hilt pour fournir les dépendances liées aux repositories.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+object RepositoryModule {
 
-    // Associe CandidateRepositoryImpl à CandidateRepository
-    @Binds
+    /**
+     * Fournit une instance de `CandidateRepository`.
+     * @param repositoryImpl L'implémentation de CandidateRepository.
+     */
+    @Provides
     @Singleton
-    abstract fun binCandidateRepository(
-        candidateRepositoryImpl: CandidateRepositoryImpl
-    ): CandidateRepository
+    fun provideCandidateRepository(
+        repositoryImpl: CandidateRepositoryImpl
+    ): CandidateRepository {
+        return repositoryImpl
+    }
 }
