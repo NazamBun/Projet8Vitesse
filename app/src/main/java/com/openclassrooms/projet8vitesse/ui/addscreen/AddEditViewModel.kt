@@ -60,22 +60,30 @@ class AddEditViewModel @Inject constructor(
     }
 
     /**
-     * Met à jour les informations d'un candidat existant.
-     *
-     * @param candidate Le candidat à mettre à jour.
+     * Met à jour les informations d'un candidat existant dans la base de données.
+     * @param candidate Les informations mises à jour du candidat.
      */
     fun updateCandidate(candidate: Candidate) {
+        // Vérifier les champs obligatoires
+        if (candidate.firstName.isBlank() || candidate.lastName.isBlank() ||
+            candidate.phoneNumber.isBlank() || candidate.email.isBlank() ||
+            candidate.dateOfBirth == Instant.EPOCH
+        ) {
+            _uiState.value = AddEditUiState.Error("All fields are mandatory.")
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = AddEditUiState.Loading
             try {
-                val rowsUpdated = updateCandidateUseCase.invoke(candidate)
-                if (rowsUpdated > 0) {
-                    _uiState.value = AddEditUiState.Success("Candidate updated successfully")
+                val rowsAffected = updateCandidateUseCase.invoke(candidate)
+                if (rowsAffected > 0) {
+                    _uiState.value = AddEditUiState.Success("Candidate updated successfully!")
                 } else {
-                    _uiState.value = AddEditUiState.Error("No rows were updated.")
+                    _uiState.value = AddEditUiState.Error("Failed to update candidate.")
                 }
             } catch (e: Exception) {
-                _uiState.value = AddEditUiState.Error("Error updating candidate: ${e.message}")
+                _uiState.value = AddEditUiState.Error(e.message ?: "An unexpected error occurred.")
             }
         }
     }
