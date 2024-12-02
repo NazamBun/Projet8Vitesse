@@ -12,10 +12,4 @@ import javax.inject.Inject
 @HiltViewModel
 class AddEditViewModel @Inject constructor(val repository: CandidateRepository) : ViewModel() {
 
-    // Ajouter ou mettre à jour un candidat
-    fun saveCandidate(candidate: CandidateDto) {
-        viewModelScope.launch {
-            repository.insertCandidate(candidate)
-        }
-    }
 }

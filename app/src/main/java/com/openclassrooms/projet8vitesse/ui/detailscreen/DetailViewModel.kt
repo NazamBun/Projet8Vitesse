@@ -12,18 +12,5 @@ import javax.inject.Inject
 @HiltViewModel
 class DetailViewModel @Inject constructor(val repository: CandidateRepository) : ViewModel() {
 
-    // Supprimer un candidat
-    fun deleteCandidate(candidate: CandidateDto) {
-        viewModelScope.launch {
-            repository.deleteCandidate(candidate)
-        }
-    }
 
-    // Ajouter ou retirer un candidat des favoris
-    fun toggleFavorite(candidate: CandidateDto) {
-        viewModelScope.launch {
-            val updatedCandidate = candidate.copy(isFavorite = !candidate.isFavorite)
-            repository.insertCandidate(updatedCandidate)
-        }
-    }
 }

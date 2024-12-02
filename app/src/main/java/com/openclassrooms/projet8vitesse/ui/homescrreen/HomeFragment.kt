@@ -13,7 +13,8 @@ import com.google.android.material.tabs.TabLayout
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentHomeBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
-import com.openclassrooms.projet8vitesse.ui.adapter.CandidateAdapter
+import com.openclassrooms.projet8vitesse.presentation.ui.homescreen.adapter.CandidateAdapter
+import com.openclassrooms.projet8vitesse.ui.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -99,8 +100,7 @@ class HomeFragment : Fragment() {
      */
     private fun setupFloatingActionButton() {
         binding.fabAddCandidate.setOnClickListener {
-            // Naviguer vers l'écran d'ajout (AddScreen)
-            Toast.makeText(requireContext(), "Navigate to Add Screen", Toast.LENGTH_SHORT).show()
+            (requireActivity() as MainActivity).navigateToAddEdit()
         }
     }
 

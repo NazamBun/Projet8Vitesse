@@ -20,10 +20,9 @@ class AddEditFragment : Fragment() {
     private var _binding: FragmentAddEditBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: AddEditViewModel by viewModels()
-
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAddEditBinding.inflate(inflater, container, false)
@@ -32,44 +31,22 @@ class AddEditFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-
-
-        // Définir le titre en fonction du mode (Ajout ou Édition)
-        val isEditMode = arguments?.getBoolean("isEditMode", false) ?: false
-        binding.topAppBar.title = if (isEditMode) {
-            getString(R.string.edit_candidate)
-        } else {
-            getString(R.string.add_candidate)
-        }
-
-        // Gestion de l'icône de retour
-        binding.topAppBar.setNavigationOnClickListener {
-            parentFragmentManager.popBackStack()
-        }
-
-
-        binding.saveButton.setOnClickListener {
-            saveCandidate()
-        }
+        setupTopAppBar()
     }
 
     /**
-     * Récupère les valeurs des champs de saisie, les valide,
-     * et sauvegarde un nouveau candidat ou met à jour l'existant
+     * Configure la TopAppBar avec un titre et une icône de navigation.
      */
-    private fun saveCandidate() {
-        // Récupérer les valeurs des champs
-        val firstName = binding.tiFirstname.text.toString().trim()
-        val lastName = binding.tiLastname.text.toString().trim()
-        val email = binding.tiEmail.text.toString().trim()
-        val phoneNumber = binding.tiPhone.text.toString().trim()
-        val notes = binding.tiNotes.text.toString().trim()
-        val expectedSalaryString = binding.tiSalary.text.toString().trim()
+    private fun setupTopAppBar() {
+        binding.topAppBar.title = getString(R.string.add_candidate)
+        binding.topAppBar.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
 }
