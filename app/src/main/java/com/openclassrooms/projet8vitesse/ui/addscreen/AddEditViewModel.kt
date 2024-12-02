@@ -2,15 +2,14 @@ package com.openclassrooms.projet8vitesse.ui.addscreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.openclassrooms.projet8vitesse.data.repository.CandidateRepository
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import com.openclassrooms.projet8vitesse.domain.usecase.InsertCandidateUseCase
 import com.openclassrooms.projet8vitesse.domain.usecase.UpdateCandidateUseCase
-import com.openclassrooms.projet8vitesse.domain.usecase.UpdateFavoriteStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.time.Instant
 import javax.inject.Inject
 
 /**
@@ -20,7 +19,8 @@ import javax.inject.Inject
  * - Insérer un nouveau candidat.
  * - Mettre à jour les informations d'un candidat existant.
  * - Gérer l'état des opérations (succès, échec, etc.).
- */@HiltViewModel
+ */
+@HiltViewModel
 class AddEditViewModel @Inject constructor(
     private val insertCandidateUseCase: InsertCandidateUseCase,
     private val updateCandidateUseCase: UpdateCandidateUseCase
@@ -31,18 +31,30 @@ class AddEditViewModel @Inject constructor(
     val uiState: StateFlow<AddEditUiState> = _uiState
 
     /**
-     * Insère un nouveau candidat dans la base de données.
-     *
-     * @param candidate Le candidat à insérer.
+     * Insère un candidat dans la base de données.
+     * @param candidate Les informations du candidat à insérer.
      */
     fun insertCandidate(candidate: Candidate) {
+        // Vérifier les champs obligatoires
+        if (candidate.firstName.isBlank() || candidate.lastName.isBlank() ||
+            candidate.phoneNumber.isBlank() || candidate.email.isBlank() ||
+            candidate.dateOfBirth == Instant.EPOCH
+        ) {
+            _uiState.value = AddEditUiState.Error("All fields are mandatory.")
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = AddEditUiState.Loading
             try {
-                val result = insertCandidateUseCase.invoke(candidate)
-                _uiState.value = AddEditUiState.Success("Candidate inserted with ID: $result")
+                val id = insertCandidateUseCase.invoke(candidate)
+                if (id > 0) {
+                    _uiState.value = AddEditUiState.Success("Candidate added successfully!")
+                } else {
+                    _uiState.value = AddEditUiState.Error("Failed to add candidate.")
+                }
             } catch (e: Exception) {
-                _uiState.value = AddEditUiState.Error("Error inserting candidate: ${e.message}")
+                _uiState.value = AddEditUiState.Error(e.message ?: "An unexpected error occurred.")
             }
         }
     }
