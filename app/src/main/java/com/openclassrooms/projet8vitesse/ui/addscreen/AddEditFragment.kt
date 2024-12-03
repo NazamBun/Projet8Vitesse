@@ -10,7 +10,9 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentAddEditBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
@@ -76,10 +78,12 @@ class AddEditFragment : Fragment() {
 
     /**
      * Observe l'état de l'interface utilisateur via le ViewModel.
+     *
+     * Utilise repeatOnLifecycle pour éviter les pertes de ressources.
      */
     private fun observeUiState() {
         lifecycleScope.launch {
-            viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     when (state) {
                         is AddEditUiState.Loading -> showLoading()
