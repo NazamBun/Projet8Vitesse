@@ -29,4 +29,5 @@
     <string name="note">Note</string>
     <string name="all_candidates">Tous</string>
     <string name="favorite_candidates">Favoris</string>
+    <string name="missing_fields_error">Erreur champs manquant</string>
 </resources>
