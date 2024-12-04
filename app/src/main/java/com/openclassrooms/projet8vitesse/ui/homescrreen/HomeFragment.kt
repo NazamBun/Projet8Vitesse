@@ -15,6 +15,7 @@ import com.openclassrooms.projet8vitesse.databinding.FragmentHomeBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import com.openclassrooms.projet8vitesse.presentation.ui.homescreen.adapter.CandidateAdapter
 import com.openclassrooms.projet8vitesse.ui.MainActivity
+import com.openclassrooms.projet8vitesse.ui.detailscreen.DetailFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -47,7 +48,6 @@ class HomeFragment : Fragment() {
         setupTabLayout()
         setupSearchBar()
         setupFloatingActionButton()
-
         observeViewModel()
         homeViewModel.loadCandidates() // Charger les candidats initiaux
 
@@ -140,7 +140,7 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Affiche l'état vide.
+     * Affiche un message d'état vide si aucun candidat n'est disponible.
      */
     private fun showEmptyState() {
         binding.progressBar.visibility = View.GONE
@@ -150,6 +150,7 @@ class HomeFragment : Fragment() {
 
     /**
      * Affiche un message d'erreur.
+     * @param message Le message d'erreur à afficher.
      */
     private fun showError(message: String) {
         binding.progressBar.visibility = View.GONE
@@ -160,10 +161,14 @@ class HomeFragment : Fragment() {
 
     /**
      * Action lors du clic sur un candidat.
+     * @param candidate Le candidat sélectionné.
      */
     private fun onCandidateClicked(candidate: Candidate) {
-        Toast.makeText(requireContext(), "Navigate to Detail Screen for ${candidate.firstName}", Toast.LENGTH_SHORT).show()
-        // Naviguer vers l'écran de détails
+        val fragment = DetailFragment.newInstance(candidate.id ?: 0)
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     override fun onDestroyView() {

@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun navigateToHome() {
         supportFragmentManager.commit {
-            replace(R.id.main, HomeFragment())
+            replace(R.id.fragment_container, HomeFragment())
             addToBackStack(null)
         }
     }
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
      */
     fun navigateToAddEdit() {
         supportFragmentManager.commit {
-            replace(R.id.main, AddEditFragment())
+            replace(R.id.fragment_container, AddEditFragment())
             addToBackStack(null)
         }
     }
