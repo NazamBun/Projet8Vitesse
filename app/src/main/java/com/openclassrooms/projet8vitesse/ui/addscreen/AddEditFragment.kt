@@ -194,6 +194,35 @@ class AddEditFragment : Fragment() {
             binding.tilEmail.error = null
         }
 
+        // Salaire
+        val salary = binding.tiSalary.text.toString().trim()
+        if (salary.isEmpty()) {
+            binding.tilSalary.error = getString(R.string.missing_fields_error)
+            isValid = false
+        } else {
+            binding.tilSalary.error = null
+        }
+
+        // Notes
+        val note = binding.tiNotes.text.toString().trim()
+        if (note.isEmpty()) {
+            binding.tilNotes.error = getString(R.string.missing_fields_error)
+            isValid = false
+        } else {
+            binding.tilNotes.error = null
+        }
+
+        // Date de naissance
+        val dateOfBirth = Instant.now() // Remplacez par la vraie date de naissance saisie par l'utilisateur
+        if (dateOfBirth == Instant.EPOCH) {
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.missing_date_of_birth_error),
+                Toast.LENGTH_SHORT
+            ).show()
+            isValid = false
+        }
+
         return isValid
     }
 

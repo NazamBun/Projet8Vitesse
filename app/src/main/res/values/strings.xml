@@ -40,4 +40,5 @@
     <string name="missing_fields_error">Champ obligatoire</string>
     <string name="invalid_email_format">Format invalide</string>
     <string name="favorite_icon">icone favorite</string>
+    <string name="missing_date_of_birth_error">Date de naissance manquante</string>
 </resources>

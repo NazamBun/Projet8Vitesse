@@ -35,4 +35,5 @@
     <string name="delete_icon">icone supprimer</string>
     <string name="invalid_email_format">Format invalide</string>
     <string name="favorite_icon">icone favorite</string>
+    <string name="missing_date_of_birth_error">Date de naissance manquante</string>
 </resources>
