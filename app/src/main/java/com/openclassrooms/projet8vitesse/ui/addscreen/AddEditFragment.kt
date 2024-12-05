@@ -101,11 +101,17 @@ class AddEditFragment : Fragment() {
      */
     private fun setupSaveButton() {
         binding.saveButton.setOnClickListener {
-            val candidate = gatherCandidateData()
-            if (candidate != null) {
-                viewModel.insertCandidate(candidate)
+            if (validateFields()) {
+                val candidate = gatherCandidateData()
+                if (candidate != null) {
+                    viewModel.insertCandidate(candidate)
+                }
             } else {
-                Toast.makeText(requireContext(), R.string.missing_fields_error, Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.missing_fields_error),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -115,11 +121,11 @@ class AddEditFragment : Fragment() {
      * @return Un objet Candidate si toutes les données sont valides, sinon null.
      */
     private fun gatherCandidateData(): Candidate? {
-        val firstName = binding.tiFirstname.text.toString()
-        val lastName = binding.tiLastname.text.toString()
-        val phoneNumber = binding.tiPhone.text.toString()
-        val email = binding.tiEmail.text.toString()
-        val note = binding.tiNotes.text.toString()
+        val firstName = binding.tiFirstname.text.toString().trim()
+        val lastName = binding.tiLastname.text.toString().trim()
+        val phoneNumber = binding.tiPhone.text.toString().trim()
+        val email = binding.tiEmail.text.toString().trim()
+        val note = binding.tiNotes.text.toString().trim()
         val salary = binding.tiSalary.text.toString().toIntOrNull()
         val dateOfBirth = Instant.now() // Remplacez par une date valide sélectionnée par l'utilisateur
 
@@ -138,6 +144,57 @@ class AddEditFragment : Fragment() {
         } else {
             null
         }
+    }
+
+    /**
+     * Vérifie que tous les champs sont remplis et valides.
+     * Affiche des erreurs visuelles pour chaque champ non valide.
+     *
+     * @return true si tous les champs sont valides, false sinon.
+     */
+    private fun validateFields(): Boolean {
+        var isValid = true
+
+        // Prénom
+        val firstName = binding.tiFirstname.text.toString().trim()
+        if (firstName.isEmpty()) {
+            binding.tilFirstname.error = getString(R.string.missing_fields_error)
+            isValid = false
+        } else {
+            binding.tilFirstname.error = null // Supprime l'erreur si corrigé
+        }
+
+        // Nom
+        val lastName = binding.tiLastname.text.toString().trim()
+        if (lastName.isEmpty()) {
+            binding.tilLastname.error = getString(R.string.missing_fields_error)
+            isValid = false
+        } else {
+            binding.tilLastname.error = null
+        }
+
+        // Téléphone
+        val phoneNumber = binding.tiPhone.text.toString().trim()
+        if (phoneNumber.isEmpty()) {
+            binding.tilPhone.error = getString(R.string.missing_fields_error)
+            isValid = false
+        } else {
+            binding.tilPhone.error = null
+        }
+
+        // Email
+        val email = binding.tiEmail.text.toString().trim()
+        if (email.isEmpty()) {
+            binding.tilEmail.error = getString(R.string.missing_fields_error)
+            isValid = false
+        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            binding.tilEmail.error = getString(R.string.invalid_email_format)
+            isValid = false
+        } else {
+            binding.tilEmail.error = null
+        }
+
+        return isValid
     }
 
     /**

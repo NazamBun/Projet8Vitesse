@@ -33,4 +33,6 @@
     <string name="navigation_back">retour</string>
     <string name="edit_icon">icone modifier</string>
     <string name="delete_icon">icone supprimer</string>
+    <string name="invalid_email_format">Format invalide</string>
+    <string name="favorite_icon">icone favorite</string>
 </resources>

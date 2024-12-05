@@ -29,12 +29,15 @@
     <string name="note">Note</string>
     <string name="all_candidates">Tous</string>
     <string name="favorite_candidates">Favoris</string>
-    <string name="missing_fields_error">Erreur champs manquant</string>
 
 
     <string name="detail_screen_top_bar_name_text" translatable="false">Detail screen</string>
     <string name="navigation_back">retour</string>
-    <string name="favorite_icon">icone favorite</string>
     <string name="edit_icon">icone modifier</string>
     <string name="delete_icon">icone supprimer</string>
+
+
+    <string name="missing_fields_error">Champ obligatoire</string>
+    <string name="invalid_email_format">Format invalide</string>
+    <string name="favorite_icon">icone favorite</string>
 </resources>
