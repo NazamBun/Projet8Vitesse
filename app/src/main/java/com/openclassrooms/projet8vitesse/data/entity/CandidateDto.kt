@@ -5,7 +5,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
-import java.time.Instant
+import org.threeten.bp.Instant
+
 
 // Représente un candidat dans la base de données
 @Entity(tableName = "candidates")

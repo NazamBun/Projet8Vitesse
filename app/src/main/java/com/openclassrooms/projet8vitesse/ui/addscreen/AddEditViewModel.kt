@@ -10,7 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.time.Instant
+import org.threeten.bp.Instant
 import java.util.Date
 import javax.inject.Inject
 
@@ -34,7 +34,7 @@ class AddEditViewModel @Inject constructor(
     val uiState: StateFlow<AddEditUiState> = _uiState
 
     private var candidatePhoto: Bitmap? = null
-    private var candidateDateOfBirth: Date? = null
+    private var candidateDateOfBirth: Instant? = null
 
     private val candidateData = MutableStateFlow(Candidate())
 
@@ -50,8 +50,8 @@ class AddEditViewModel @Inject constructor(
      * Met à jour la date de naissance du candidat.
      * @param date La date sélectionnée via le DatePicker.
      */
-    fun updateDateOfBirth(date: Date) {
-        candidateDateOfBirth = date
+    fun updateDateOfBirth(instant: Instant) {
+        candidateDateOfBirth = instant
     }
 
     /**
@@ -87,7 +87,7 @@ class AddEditViewModel @Inject constructor(
     fun onSaveCandidate() {
         val candidate = candidateData.value.copy(
             photo = candidatePhoto,
-            dateOfBirth = candidateDateOfBirth?.toInstant() ?: Instant.EPOCH
+            dateOfBirth = candidateDateOfBirth?:Instant.now()
         )
 
         if (validateCandidate(candidate)) {

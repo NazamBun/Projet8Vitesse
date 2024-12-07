@@ -13,18 +13,18 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentDetailBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
+import com.openclassrooms.projet8vitesse.utils.DateUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+import org.threeten.bp.ZoneId
+import org.threeten.bp.temporal.ChronoUnit
 import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.Period
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
 
 /**
  * Fragment pour afficher les détails d'un candidat.
@@ -176,8 +176,7 @@ class DetailFragment : Fragment() {
      * @return La date formatée en String.
      */
     private fun formatDateOfBirth(dateOfBirth: Instant): String {
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        return formatter.format(Date.from(dateOfBirth))
+        return DateUtils.localeDateTimeStringFromInstant(dateOfBirth)?:""
     }
 
     /**

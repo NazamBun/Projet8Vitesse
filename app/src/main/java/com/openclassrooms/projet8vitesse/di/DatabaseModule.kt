@@ -7,8 +7,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import android.content.Context
+import com.openclassrooms.projet8vitesse.data.dao.CandidateDao
 import com.openclassrooms.projet8vitesse.data.database.AppDatabase
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 // Ce module configure Room pour l'injection de dépendances
 @Module
@@ -16,20 +20,22 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 
 object DatabaseModule {
 
-    // Fournit l'instance de la base de données Room
-    private const val DATABASE_NAME = "candidate_database"
+    @Provides
+    @Singleton
+    fun provideCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            DATABASE_NAME
-        ).build()
+    fun provideAppDatabase(
+        @ApplicationContext context: Context,
+        coroutineScope: CoroutineScope
+    ): AppDatabase {
+        return AppDatabase.getDatabase(context, coroutineScope)
     }
-    // Fournit le DAO pour accéder aux données
+
     @Provides
-    @Singleton
-    fun provideCandidateDao(database: AppDatabase) = database.candidateDao()
+    fun provideCandidateDAO(appDatabase: AppDatabase): CandidateDao {
+        return appDatabase.candidateDao()
+    }
+
 }

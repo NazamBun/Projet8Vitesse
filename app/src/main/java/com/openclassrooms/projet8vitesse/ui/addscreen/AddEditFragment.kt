@@ -21,6 +21,7 @@ import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentAddEditBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import com.openclassrooms.projet8vitesse.ui.detailscreen.DetailFragment
+import com.openclassrooms.projet8vitesse.utils.DateUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -117,7 +118,7 @@ class AddEditFragment : Fragment() {
                 { _, year, month, dayOfMonth ->
                     val selectedDate = Calendar.getInstance()
                     selectedDate.set(year, month, dayOfMonth)
-                    viewModel.updateDateOfBirth(selectedDate.time)
+                    viewModel.updateDateOfBirth(DateUtils.computeInstantFromLocalDate(year,month,dayOfMonth))
 
                     // Formater la date et l’afficher dans le champ
                     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
