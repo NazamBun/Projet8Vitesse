@@ -11,8 +11,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_vitesse_round"
         android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.Projet8Vitesse"
-        tools:targetApi="31">
+        tools:targetApi="tiramisu">
         <activity
             android:name="com.openclassrooms.projet8vitesse.ui.MainActivity"
             android:exported="true">

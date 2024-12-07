@@ -244,17 +244,21 @@
                             android:layout_height="wrap_content" />
 
                         <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/til_add_edit_date_of_birth"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            app:errorEnabled="true">
+                            app:errorEnabled="true"
+                            app:endIconMode="custom">
 
                             <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/tie_add_edit_date_of_birth"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_margin="16dp"
-                                android:layout_marginBottom="16dp"
-                                android:hint="@string/birthday_date"
-                                android:inputType="date"/>
+                                android:hint="Entrer une date"
+                                android:inputType="none"
+                                android:focusable="false"
+                                android:cursorVisible="false"
+                                android:drawableEnd="@drawable/ic_outline_calendar" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                     </LinearLayout>
@@ -331,7 +335,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="start|top"
-                        android:inputType="text" />
+                        android:inputType="textMultiLine"
+                        android:lines="5"
+                        android:scrollHorizontally="false"
+                        android:ellipsize="none"/>
 
                 </com.google.android.material.textfield.TextInputLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>

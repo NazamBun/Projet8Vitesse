@@ -55,6 +55,15 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Recharge la liste des candidats en fonction des derniers filtres.
+     * Utilisé après l'ajout d'un candidat.
+     */
+    fun reloadCandidates() {
+        loadCandidates(currentFilter, showFavoritesOnly)
+    }
+
     /**
      * Met à jour le statut de favori d'un candidat.
      * @param candidate Le candidat dont le statut doit être mis à jour.

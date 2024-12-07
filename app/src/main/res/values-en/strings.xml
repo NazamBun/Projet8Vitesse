@@ -36,4 +36,6 @@
     <string name="invalid_email_format">Format invalide</string>
     <string name="favorite_icon">icone favorite</string>
     <string name="missing_date_of_birth_error">Date de naissance manquante</string>
+    <string name="candidate_added_successfully">Candidat ajouté avec succès</string>
+    <string name="age_format">%1$d ans</string>
 </resources>

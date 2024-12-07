@@ -12,7 +12,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel pour gérer les données et la logique de DetailScreen.
+ * ViewModel pour gérer les données et la logique de l'écran de détail (DetailScreen).
+ *
+ * Il permet de :
+ * - Charger les informations d'un candidat à partir de son ID.
+ * - Actualiser le statut "favori" du candidat.
+ * - Supprimer le candidat.
+ * - Gérer la navigation vers l'écran d'édition et le retour après suppression.
  */
 @HiltViewModel
 class DetailViewModel @Inject constructor(
@@ -23,9 +29,19 @@ class DetailViewModel @Inject constructor(
     private val _candidate = MutableStateFlow<Candidate?>(null)
     val candidate: StateFlow<Candidate?> get() = _candidate
 
+    // État de navigation pour l'édition
+    private val _navigateToEdit = MutableStateFlow(false)
+    val navigateToEdit: StateFlow<Boolean> get() = _navigateToEdit
+
+    // État de navigation après suppression
+    private val _navigateBackAfterDelete = MutableStateFlow(false)
+    val navigateBackAfterDelete: StateFlow<Boolean> get() = _navigateBackAfterDelete
+
     /**
-     * Charge les données du candidat depuis le repository.
-     * @param candidateId L'ID du candidat à charger.
+     * Charge les données du candidat depuis le repository en fonction de l'ID fourni.
+     *
+     * @param candidateId L'ID du candidat à afficher.
+     * Ce flux émettra les données du candidat dès qu'elles seront disponibles.
      */
     fun loadCandidate(candidateId: Long) {
         viewModelScope.launch {
@@ -42,7 +58,7 @@ class DetailViewModel @Inject constructor(
         _candidate.value?.let { candidate ->
             viewModelScope.launch {
                 repository.updateFavoriteStatus(candidate.id!!, !candidate.isFavorite)
-                loadCandidate(candidate.id!!)
+                loadCandidate(candidate.id!!) // Recharge les données pour avoir l'état mis à jour
             }
         }
     }
@@ -54,7 +70,25 @@ class DetailViewModel @Inject constructor(
         _candidate.value?.let { candidate ->
             viewModelScope.launch {
                 repository.deleteCandidate(candidate)
+                // Déclenche une navigation en arrière
+                _navigateBackAfterDelete.value = true
             }
         }
+    }
+
+    /**
+     * Déclenche la navigation vers l'écran d'édition.
+     * (Déplacé depuis le Fragment)
+     */
+    fun navigateToEdit() {
+        _navigateToEdit.value = true
+    }
+
+    /**
+     * Réinitialise les états de navigation.
+     */
+    fun resetNavigationFlags() {
+        _navigateToEdit.value = false
+        _navigateBackAfterDelete.value = false
     }
 }

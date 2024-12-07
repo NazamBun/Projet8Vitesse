@@ -1,8 +1,8 @@
-package com.openclassrooms.projet8vitesse
+    package com.openclassrooms.projet8vitesse
 
-import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+    import android.app.Application
+    import dagger.hilt.android.HiltAndroidApp
 
-@HiltAndroidApp
-class MainApplication: Application() {
-}
+    @HiltAndroidApp
+    class MainApplication: Application() {
+    }

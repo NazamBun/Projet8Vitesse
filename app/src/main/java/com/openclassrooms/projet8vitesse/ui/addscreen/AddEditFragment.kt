@@ -1,14 +1,18 @@
 package com.openclassrooms.projet8vitesse.ui.addscreen
 
+import android.app.DatePickerDialog
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.DatePicker
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -16,27 +20,52 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentAddEditBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
+import com.openclassrooms.projet8vitesse.ui.detailscreen.DetailFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.time.Instant
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
+/**
+ * Fragment permettant d'ajouter ou modifier un candidat.
+ *
+ * Ce fragment gère :
+ * - La sélection de la photo
+ * - La saisie des informations du candidat
+ * - La validation des champs
+ * - L'enregistrement du candidat via le ViewModel
+ * - La navigation vers l'écran de détail en cas de succès
+ */
 @AndroidEntryPoint
 class AddEditFragment : Fragment() {
 
+    // Liaison au layout du fragment
     private var _binding: FragmentAddEditBinding? = null
     private val binding get() = _binding!!
 
+    // ViewModel pour gérer la logique métier
     private val viewModel: AddEditViewModel by viewModels()
 
-    private var candidatePhoto: Bitmap? = null // Champ pour stocker la photo du candidat
-
-    // Gestionnaire de résultats pour sélectionner une image
+    /**
+     * Lanceur d'activité pour sélectionner une image dans la galerie.
+     * Quand l'utilisateur sélectionne une image, on la met à jour dans le ViewModel,
+     * puis on l'affiche directement dans l'ImageView.
+     */
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) {
                 val inputStream = requireContext().contentResolver.openInputStream(uri)
-                candidatePhoto = BitmapFactory.decodeStream(inputStream)
-                binding.candidatePhoto.setImageBitmap(candidatePhoto)
+                val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
+
+                if (bitmap != null) {
+                    // Mettre à jour la photo dans le ViewModel
+                    viewModel.updatePhoto(bitmap)
+                    // Afficher immédiatement la photo sélectionnée
+                    binding.candidatePhoto.setImageBitmap(bitmap)
+                }
             }
         }
 
@@ -55,6 +84,7 @@ class AddEditFragment : Fragment() {
         observeUiState()
         setupSaveButton()
         setupPhotoClick()
+        setupDateOfBirthPicker()
     }
 
     /**
@@ -77,6 +107,64 @@ class AddEditFragment : Fragment() {
     }
 
     /**
+     * Configure le champ de sélection de la date de naissance avec un DatePickerDialog.
+     */
+    private fun setupDateOfBirthPicker() {
+        binding.tieAddEditDateOfBirth.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            val datePicker = DatePickerDialog(
+                requireContext(),
+                { _, year, month, dayOfMonth ->
+                    val selectedDate = Calendar.getInstance()
+                    selectedDate.set(year, month, dayOfMonth)
+                    viewModel.updateDateOfBirth(selectedDate.time)
+
+                    // Formater la date et l’afficher dans le champ
+                    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    val formattedDate = dateFormat.format(selectedDate.time)
+                    binding.tieAddEditDateOfBirth.setText(formattedDate)
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            )
+            datePicker.datePicker.maxDate = System.currentTimeMillis()
+            datePicker.show()
+        }
+    }
+
+    /**
+     * Configure l'action du bouton "Save".
+     */
+    private fun setupSaveButton() {
+        binding.saveButton.setOnClickListener {
+            if (validateFields()) {
+                // Récupérer les données depuis les champs
+                val firstName = binding.tiFirstname.text?.toString()?.trim() ?: ""
+                val lastName = binding.tiLastname.text?.toString()?.trim() ?: ""
+                val phoneNumber = binding.tiPhone.text?.toString()?.trim() ?: ""
+                val email = binding.tiEmail.text?.toString()?.trim() ?: ""
+                val dateOfBirth = binding.tieAddEditDateOfBirth.text?.toString()?.trim() ?: ""
+                val salary = binding.tiSalary.text?.toString()?.trim() ?: "0"
+                val notes = binding.tiNotes.text?.toString()?.trim() ?: ""
+
+                // Mettre à jour les données du candidat dans le ViewModel
+                viewModel.updateCandidateData(
+                    firstName = firstName,
+                    lastName = lastName,
+                    phoneNumber = phoneNumber,
+                    email = email,
+                    expectedSalary = salary.toInt(),
+                    notes = notes
+                )
+
+                // Appeler la fonction pour sauvegarder le candidat
+                viewModel.onSaveCandidate()
+            }
+        }
+    }
+
+    /**
      * Observe l'état de l'interface utilisateur via le ViewModel.
      *
      * Utilise repeatOnLifecycle pour éviter les pertes de ressources.
@@ -87,7 +175,7 @@ class AddEditFragment : Fragment() {
                 viewModel.uiState.collect { state ->
                     when (state) {
                         is AddEditUiState.Loading -> showLoading()
-                        is AddEditUiState.Success -> showSuccess(state.message)
+                        is AddEditUiState.Success -> showSuccess(state.message, state.candidateId)
                         is AddEditUiState.Error -> showError(state.error)
                         AddEditUiState.Idle -> Unit // Aucun changement
                     }
@@ -97,149 +185,99 @@ class AddEditFragment : Fragment() {
     }
 
     /**
-     * Configure l'action du bouton "Save".
-     */
-    private fun setupSaveButton() {
-        binding.saveButton.setOnClickListener {
-            if (validateFields()) {
-                val candidate = gatherCandidateData()
-                if (candidate != null) {
-                    viewModel.insertCandidate(candidate)
-                }
-            } else {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.missing_fields_error),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
-    /**
-     * Rassemble les données saisies dans le formulaire pour créer un objet Candidate.
-     * @return Un objet Candidate si toutes les données sont valides, sinon null.
-     */
-    private fun gatherCandidateData(): Candidate? {
-        val firstName = binding.tiFirstname.text.toString().trim()
-        val lastName = binding.tiLastname.text.toString().trim()
-        val phoneNumber = binding.tiPhone.text.toString().trim()
-        val email = binding.tiEmail.text.toString().trim()
-        val note = binding.tiNotes.text.toString().trim()
-        val salary = binding.tiSalary.text.toString().toIntOrNull()
-        val dateOfBirth = Instant.now() // Remplacez par une date valide sélectionnée par l'utilisateur
-
-        return if (firstName.isNotEmpty() && lastName.isNotEmpty() && phoneNumber.isNotEmpty() && email.isNotEmpty() && salary != null && candidatePhoto != null) {
-            Candidate(
-                firstName = firstName,
-                lastName = lastName,
-                photo = candidatePhoto!!,
-                phoneNumber = phoneNumber,
-                email = email,
-                dateOfBirth = dateOfBirth,
-                expectedSalary = salary,
-                note = note,
-                isFavorite = false
-            )
-        } else {
-            null
-        }
-    }
-
-    /**
-     * Vérifie que tous les champs sont remplis et valides.
-     * Affiche des erreurs visuelles pour chaque champ non valide.
-     *
-     * @return true si tous les champs sont valides, false sinon.
+     * Validation des champs obligatoires et du format de l'email.
+     * Retourne true si tous les champs sont remplis correctement, sinon false.
      */
     private fun validateFields(): Boolean {
-        var isValid = true
+        var allValid = true
 
-        // Prénom
-        val firstName = binding.tiFirstname.text.toString().trim()
+        // Récupération des valeurs saisies
+        val firstName = binding.tiFirstname.text?.toString()?.trim() ?: ""
+        val lastName = binding.tiLastname.text?.toString()?.trim() ?: ""
+        val phoneNumber = binding.tiPhone.text?.toString()?.trim() ?: ""
+        val email = binding.tiEmail.text?.toString()?.trim() ?: ""
+        val dateOfBirth = binding.tieAddEditDateOfBirth.text?.toString()?.trim() ?: ""
+        val salary = binding.tiSalary.text?.toString()?.trim() ?: ""
+        val notes = binding.tiNotes.text?.toString()?.trim() ?: ""
+
+        // Réinitialisation des erreurs
+        binding.tilFirstname.error = null
+        binding.tilLastname.error = null
+        binding.tilPhone.error = null
+        binding.tilEmail.error = null
+        binding.tilAddEditDateOfBirth.error = null
+        binding.tilSalary.error = null
+        binding.tilNotes.error = null
+
+        // Vérification des champs obligatoires
         if (firstName.isEmpty()) {
             binding.tilFirstname.error = getString(R.string.missing_fields_error)
-            isValid = false
-        } else {
-            binding.tilFirstname.error = null // Supprime l'erreur si corrigé
+            allValid = false
         }
 
-        // Nom
-        val lastName = binding.tiLastname.text.toString().trim()
         if (lastName.isEmpty()) {
             binding.tilLastname.error = getString(R.string.missing_fields_error)
-            isValid = false
-        } else {
-            binding.tilLastname.error = null
+            allValid = false
         }
 
-        // Téléphone
-        val phoneNumber = binding.tiPhone.text.toString().trim()
         if (phoneNumber.isEmpty()) {
             binding.tilPhone.error = getString(R.string.missing_fields_error)
-            isValid = false
-        } else {
-            binding.tilPhone.error = null
+            allValid = false
         }
 
-        // Email
-        val email = binding.tiEmail.text.toString().trim()
         if (email.isEmpty()) {
             binding.tilEmail.error = getString(R.string.missing_fields_error)
-            isValid = false
-        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            binding.tilEmail.error = getString(R.string.invalid_email_format)
-            isValid = false
+            allValid = false
         } else {
-            binding.tilEmail.error = null
+            // Vérification du format de l'email
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                binding.tilEmail.error = getString(R.string.invalid_email_format)
+                allValid = false
+            }
         }
 
-        // Salaire
-        val salary = binding.tiSalary.text.toString().trim()
+        if (dateOfBirth.isEmpty()) {
+            // L'utilisateur n'a pas choisi de date, on affiche une erreur
+            binding.tilAddEditDateOfBirth.error = getString(R.string.missing_date_of_birth_error)
+            allValid = false
+        }
+
+        // Vérification du salaire
         if (salary.isEmpty()) {
             binding.tilSalary.error = getString(R.string.missing_fields_error)
-            isValid = false
-        } else {
-            binding.tilSalary.error = null
+            allValid = false
         }
 
-        // Notes
-        val note = binding.tiNotes.text.toString().trim()
-        if (note.isEmpty()) {
+        // Vérification des notes
+        if (notes.isEmpty()) {
             binding.tilNotes.error = getString(R.string.missing_fields_error)
-            isValid = false
-        } else {
-            binding.tilNotes.error = null
+            allValid = false
         }
 
-        // Date de naissance
-        val dateOfBirth = Instant.now() // Remplacez par la vraie date de naissance saisie par l'utilisateur
-        if (dateOfBirth == Instant.EPOCH) {
-            Toast.makeText(
-                requireContext(),
-                getString(R.string.missing_date_of_birth_error),
-                Toast.LENGTH_SHORT
-            ).show()
-            isValid = false
-        }
-
-        return isValid
+        return allValid
     }
+
 
     /**
      * Affiche l'état de chargement dans l'interface utilisateur.
      */
     private fun showLoading() {
         // Afficher une ProgressBar ou tout autre indicateur visuel
+        Toast.makeText(requireContext(), "Loading...", Toast.LENGTH_SHORT).show()
     }
 
     /**
      * Affiche un message de succès.
      * @param message Le message à afficher.
      */
-    private fun showSuccess(message: String) {
+    private fun showSuccess(message: String, candidateId: Long) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-        requireActivity().onBackPressedDispatcher.onBackPressed()
+
+        val detailFragment = DetailFragment.newInstance(candidateId)
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, detailFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     /**

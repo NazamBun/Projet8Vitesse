@@ -1,5 +1,6 @@
 package com.openclassrooms.projet8vitesse.ui.detailscreen
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,9 +16,24 @@ import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.Period
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 /**
  * Fragment pour afficher les détails d'un candidat.
+ *
+ * Cette classe :
+ * - Récupère l'ID du candidat dans les arguments.
+ * - Charge le candidat via le ViewModel.
+ * - Observe le ViewModel pour réagir aux changements (affichage du candidat, navigation, suppression).
+ * - Met à jour l'UI (photo, nom, âge, etc.) en fonction du candidat obtenu.
  */
 @AndroidEntryPoint
 class DetailFragment : Fragment() {
@@ -36,6 +52,10 @@ class DetailFragment : Fragment() {
         return binding.root
     }
 
+    /**
+     * Appelée après la création de la vue.
+     * On récupère l'ID du candidat, on charge les données, on met en place la toolbar et on observe le ViewModel.
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -55,7 +75,6 @@ class DetailFragment : Fragment() {
      */
     private fun setupTopAppBar() {
         val toolbar: MaterialToolbar = binding.topAppBar
-
         // Action pour la flèche de navigation
         toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
@@ -80,7 +99,9 @@ class DetailFragment : Fragment() {
     }
 
     /**
-     * Observe les données du ViewModel pour afficher les informations du candidat.
+     * Observe le ViewModel pour :
+     * - Afficher le candidat quand il est disponible.
+     * - Réagir aux demandes de navigation (édition, retour après suppression).
      */
     private fun observeViewModel() {
         lifecycleScope.launch {
@@ -90,7 +111,29 @@ class DetailFragment : Fragment() {
                 }
             }
         }
+
+        lifecycleScope.launch {
+            viewModel.navigateToEdit.collectLatest { navigate ->
+                if (navigate) {
+                    Toast.makeText(requireContext(), "Navigate to Edit Screen", Toast.LENGTH_SHORT).show()
+                    // Implémenter la navigation vers EditFragment ici
+                    viewModel.resetNavigationFlags()
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            viewModel.navigateBackAfterDelete.collectLatest { navigate ->
+                if (navigate) {
+                    // On revient en arrière après la suppression
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                    viewModel.resetNavigationFlags()
+                }
+            }
+        }
     }
+
+
 
     /**
      * Met à jour l'interface utilisateur avec les données du candidat.
@@ -104,12 +147,55 @@ class DetailFragment : Fragment() {
         binding.favoriteIcon.setImageResource(
             if (candidate.isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star_empty
         )
+
+        // Mettre à jour la photo du candidat
+        val photoToDisplay = candidate.photo ?: BitmapFactory.decodeResource(
+            resources,
+            R.drawable.media // Placeholder par défaut si aucune photo n'est disponible
+        )
+        binding.profilePhoto.setImageBitmap(photoToDisplay)
+
+        // Formate et affiche la date de naissance
+        val formattedDate = formatDateOfBirth(candidate.dateOfBirth)
+        binding.tvFragmentDetailDateOfbirth.text = formattedDate
+
+        // Calcule et affiche l'âge
+        val age = calculateAge(candidate.dateOfBirth)
+        binding.tvFragmentDetailAge.text = getString(R.string.age_format, age)
+
+        val salaryText = "${candidate.expectedSalary} €"
+        binding.tvExpectedSalary.text = salaryText
+
+        val notesToDisplay = candidate.note ?: ""
+        binding.tvDetailNotesToDisplay.text = notesToDisplay
+    }
+
+    /**
+     * Formate une date de naissance en chaîne lisible.
+     * @param dateOfBirth La date de naissance en Instant.
+     * @return La date formatée en String.
+     */
+    private fun formatDateOfBirth(dateOfBirth: Instant): String {
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        return formatter.format(Date.from(dateOfBirth))
+    }
+
+    /**
+     * Calcule l'âge à partir de la date de naissance.
+     * @param dateOfBirth La date de naissance du candidat en Instant.
+     * @return L'âge en années.
+     */
+    private fun calculateAge(dateOfBirth: Instant): Long {
+        val birthDate = dateOfBirth.atZone(ZoneId.systemDefault()).toLocalDate()
+        val currentDate = LocalDate.now()
+        return ChronoUnit.YEARS.between(birthDate, currentDate)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
     companion object {
         private const val ARG_CANDIDATE_ID = "candidate_id"
 

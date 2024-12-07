@@ -1,10 +1,14 @@
-package com.openclassrooms.projet8vitesse.presentation.ui.homescreen.adapter
+package com.openclassrooms.projet8vitesse.ui.homescrreen.adapter
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.ItemCandidateBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 
@@ -21,6 +25,7 @@ class CandidateAdapter(
      * ViewHolder pour un élément candidat.
      *
      * @param binding Liaison des vues avec le layout XML.
+     * @param onItemClick Fonction de clic pour un candidat.
      */
     class CandidateViewHolder(
         private val binding: ItemCandidateBinding,
@@ -35,9 +40,14 @@ class CandidateAdapter(
         fun bind(candidate: Candidate) {
             binding.candidateName.text = "${candidate.firstName} ${candidate.lastName}"
             binding.candidateNote.text = candidate.note ?: ""
-            binding.candidatePhoto.setImageBitmap(candidate.photo)
 
-            // Clic sur l'élément
+            val placeholderBitmap: Bitmap = BitmapFactory.decodeResource(
+                binding.root.context.resources,
+                R.drawable.media
+            )
+
+            binding.candidatePhoto.setImageBitmap(candidate.photo ?: placeholderBitmap)
+
             binding.root.setOnClickListener {
                 onItemClick(candidate)
             }

@@ -18,8 +18,9 @@ sealed class AddEditUiState {
      * État de succès, contient un message informant l'utilisateur.
      *
      * @param message Le message de succès.
+     * @param candidateId L'ID du candidat inséré.
      */
-    data class Success(val message: String) : AddEditUiState()
+    data class Success(val message: String, val candidateId: Long) : AddEditUiState()
 
     /**
      * État d'erreur, contient un message d'erreur.
