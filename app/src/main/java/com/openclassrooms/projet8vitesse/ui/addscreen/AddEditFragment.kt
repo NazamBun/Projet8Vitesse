@@ -1,33 +1,28 @@
 package com.openclassrooms.projet8vitesse.ui.addscreen
 
 import android.app.DatePickerDialog
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.DatePicker
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentAddEditBinding
-import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import com.openclassrooms.projet8vitesse.ui.detailscreen.DetailFragment
 import com.openclassrooms.projet8vitesse.utils.DateUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import org.threeten.bp.Instant
 import java.text.SimpleDateFormat
-import java.time.Instant
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 /**
@@ -70,6 +65,9 @@ class AddEditFragment : Fragment() {
             }
         }
 
+    // ID du candidat, si on est en mode édition, sinon -1
+    private var candidateId: Long = -1
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -86,6 +84,20 @@ class AddEditFragment : Fragment() {
         setupSaveButton()
         setupPhotoClick()
         setupDateOfBirthPicker()
+        setupMode()
+    }
+
+    private fun setupMode() {
+        candidateId = arguments?.getLong(ARG_CANDIDATE_ID, -1) ?: -1
+        if (candidateId != -1L) {
+            // Mode édition
+            binding.topAppBar.title = getString(R.string.edit_candidate)
+            viewModel.loadCandidateForEdit(candidateId)
+            observeCandidateData()
+        } else {
+            // Mode ajout
+            binding.topAppBar.title = getString(R.string.add_candidate)
+        }
     }
 
     /**
@@ -95,6 +107,36 @@ class AddEditFragment : Fragment() {
         binding.topAppBar.title = getString(R.string.add_candidate)
         binding.topAppBar.setNavigationOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
+    }
+
+    /**
+     * Observe candidateData du ViewModel pour pré-remplir les champs lorsqu'on est en mode édition.
+     */
+    private fun observeCandidateData() {
+        lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.candidateDataFlow.collect { candidate ->
+                    // Pré-remplir les champs avec les données du candidat
+                    binding.tiFirstname.setText(candidate.firstName)
+                    binding.tiLastname.setText(candidate.lastName)
+                    binding.tiPhone.setText(candidate.phoneNumber)
+                    binding.tiEmail.setText(candidate.email)
+                    binding.tiSalary.setText(candidate.expectedSalary.toString())
+                    binding.tiNotes.setText(candidate.note ?: "")
+
+                    // Photo si disponible
+                    candidate.photo?.let {
+                        binding.candidatePhoto.setImageBitmap(it)
+                    }
+
+                    // Date de naissance
+                    if (candidate.dateOfBirth != Instant.EPOCH) {
+                        val formattedDate = DateUtils.localeDateTimeStringFromInstant(candidate.dateOfBirth)
+                        binding.tieAddEditDateOfBirth.setText(formattedDate)
+                    }
+                }
+            }
         }
     }
 
@@ -293,4 +335,22 @@ class AddEditFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    companion object {
+        private const val ARG_CANDIDATE_ID = "candidate_id"
+
+        /**
+         * Crée une instance d'AddEditFragment pour éditer un candidat existant.
+         * @param candidateId L'ID du candidat à modifier.
+         */
+        fun newInstance(candidateId: Long): AddEditFragment {
+            val fragment = AddEditFragment()
+            val args = Bundle()
+            args.putLong(ARG_CANDIDATE_ID, candidateId)
+            fragment.arguments = args
+            return fragment
+        }
+    }
+
 }
+

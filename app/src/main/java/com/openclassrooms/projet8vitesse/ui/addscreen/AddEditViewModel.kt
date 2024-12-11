@@ -3,12 +3,14 @@ package com.openclassrooms.projet8vitesse.ui.addscreen
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.openclassrooms.projet8vitesse.data.repository.CandidateRepository
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import com.openclassrooms.projet8vitesse.domain.usecase.InsertCandidateUseCase
 import com.openclassrooms.projet8vitesse.domain.usecase.UpdateCandidateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.threeten.bp.Instant
 import java.util.Date
@@ -26,7 +28,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AddEditViewModel @Inject constructor(
     private val insertCandidateUseCase: InsertCandidateUseCase,
-    private val updateCandidateUseCase: UpdateCandidateUseCase
+    private val updateCandidateUseCase: UpdateCandidateUseCase,
+    private val repository: CandidateRepository
 ) : ViewModel() {
 
     // État actuel de l'opération (succès, erreur, chargement, etc.).
@@ -37,6 +40,7 @@ class AddEditViewModel @Inject constructor(
     private var candidateDateOfBirth: Instant? = null
 
     private val candidateData = MutableStateFlow(Candidate())
+    val candidateDataFlow = candidateData.asStateFlow()
 
     /**
      * Met à jour la photo du candidat.
@@ -48,10 +52,25 @@ class AddEditViewModel @Inject constructor(
 
     /**
      * Met à jour la date de naissance du candidat.
-     * @param date La date sélectionnée via le DatePicker.
+     * @param instant L'instant représentant la date de naissance sélectionnée.
      */
     fun updateDateOfBirth(instant: Instant) {
         candidateDateOfBirth = instant
+    }
+
+    /**
+     * Charge un candidat existant pour l'édition.
+     * @param candidateId L'ID du candidat à charger.
+     */
+    fun loadCandidateForEdit(candidateId: Long) {
+        viewModelScope.launch {
+            repository.getById(candidateId).collect { candidate ->
+                // Met à jour candidateData, ainsi que la photo et la date
+                candidateData.value = candidate
+                candidatePhoto = candidate.photo
+                candidateDateOfBirth = candidate.dateOfBirth
+            }
+        }
     }
 
     /**

@@ -43,4 +43,8 @@
     <string name="missing_date_of_birth_error">Date de naissance manquante</string>
     <string name="candidate_added_successfully">Candidat ajouté avec succès</string>
     <string name="age_format">%1$d ans</string>
+    <string name="delete_confirmation_title">Suppression</string>
+    <string name="delete_confirmation_message">Etes-vous sûr de vouloir supprimer ce candidat ? Cette action est irréversible</string>
+    <string name="delete_confirmation">Confirmer</string>
+    <string name="delete_cancel">Annuler</string>
 </resources>

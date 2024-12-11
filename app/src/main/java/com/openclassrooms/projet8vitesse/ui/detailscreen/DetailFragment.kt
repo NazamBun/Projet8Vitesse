@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -13,6 +14,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentDetailBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
+import com.openclassrooms.projet8vitesse.ui.addscreen.AddEditFragment
 import com.openclassrooms.projet8vitesse.utils.DateUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -80,22 +82,53 @@ class DetailFragment : Fragment() {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
-        // Action pour le bouton Favori
+        // Marquer/Dé-marquer comme favori
         binding.favoriteIcon.setOnClickListener {
             viewModel.toggleFavoriteStatus()
         }
 
         // Action pour le bouton Modifier
         binding.editIcon.setOnClickListener {
-            Toast.makeText(requireContext(), "Navigate to Edit Screen", Toast.LENGTH_SHORT).show()
-            // Implémenter la navigation vers EditFragment
+            // Naviguer vers AddEditFragment en mode édition
+            val candidate = viewModel.candidate.value
+            if (candidate != null && candidate.id != null) {
+                val candidateId = candidate.id
+                // Naviguer vers AddEditFragment avec candidateId
+                val editFragment = AddEditFragment.newInstance(candidateId)
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, editFragment)
+                    .addToBackStack(null)
+                    .commit()
+            } else {
+                Toast.makeText(requireContext(), "Candidate not loaded yet", Toast.LENGTH_SHORT).show()
+            }
         }
 
-        // Action pour le bouton Supprimer
+
+        // Supprimer le candidat (afficher un dialogue de confirmation)
         binding.deleteIcon.setOnClickListener {
-            Toast.makeText(requireContext(), "Candidate deleted", Toast.LENGTH_SHORT).show()
-            viewModel.deleteCandidate()
+            showDeleteConfirmationDialog()
         }
+    }
+
+    /**
+     * Affiche une boîte de dialogue demandant à l'utilisateur de confirmer la suppression du candidat.
+     *
+     */
+
+    private fun showDeleteConfirmationDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.delete_confirmation_title)
+            .setMessage(R.string.delete_confirmation_message)
+            .setPositiveButton(R.string.delete_confirmation) { dialog, _ ->
+                dialog.dismiss()
+                // L'utilisateur confirme la suppression : on appelle le ViewModel
+                viewModel.deleteCandidate()
+            }
+            .setNegativeButton(R.string.delete_cancel) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     /**
