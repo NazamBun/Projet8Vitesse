@@ -2,8 +2,8 @@
     <string name="app_name" tools:ignore="MissingTranslation">Projet8Vitesse</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="search_hint">Rechercher un candidat</string>
-    <string name="tab_all">Tous</string>
-    <string name="tab_favorites">Favoris</string>
+    <string name="tab_all_candidates">Tous</string>
+    <string name="tab_favorite_candidates">Favoris</string>
     <string name="candidate_note_placeholder">At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</string>
     <string name="candidate_name_placeholder">Prénom NOM</string>
     <string name="candidate_photo">photo du candidat</string>
@@ -47,4 +47,6 @@
     <string name="delete_confirmation_message">Etes-vous sûr de vouloir supprimer ce candidat ? Cette action est irréversible</string>
     <string name="delete_confirmation">Confirmer</string>
     <string name="delete_cancel">Annuler</string>
+    <string name="error_loading_image">Erreur chargement de l\'image</string>
+    <string name="mandatory_field_error">mandatory field error</string>
 </resources>

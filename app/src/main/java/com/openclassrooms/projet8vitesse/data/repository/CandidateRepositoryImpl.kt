@@ -1,5 +1,6 @@
 package com.openclassrooms.projet8vitesse.data.repository
 
+import android.util.Log
 import com.openclassrooms.projet8vitesse.data.dao.CandidateDao
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import kotlinx.coroutines.flow.Flow
@@ -37,9 +38,18 @@ class CandidateRepositoryImpl @Inject constructor(
      * Récupérer un candidat par son ID.
      * Convertit le DTO en Domain Model.
      */
-    override fun getById(id: Long): Flow<Candidate> {
-        return candidateDao.getById(id).map { it.toModel() }
+    override fun getById(candidateId: Long): Flow<Candidate?> {
+        return candidateDao.getById(candidateId).map { candidateDto ->
+            if (candidateDto == null) {
+                Log.e("CandidateRepositoryImpl", "No candidate found with ID: $candidateId")
+                null
+            } else {
+                Log.d("CandidateRepositoryImpl", "Found candidate: $candidateDto")
+                candidateDto.toModel()
+            }
+        }
     }
+
 
     /**
      * Ajouter un candidat dans la base de données.

@@ -45,14 +45,15 @@ class CandidateAdapter(
                 binding.root.context.resources,
                 R.drawable.media
             )
-
             binding.candidatePhoto.setImageBitmap(candidate.photo ?: placeholderBitmap)
 
+            // Ajout de l'action de clic
             binding.root.setOnClickListener {
                 onItemClick(candidate)
             }
         }
     }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CandidateViewHolder {
         val binding = ItemCandidateBinding.inflate(

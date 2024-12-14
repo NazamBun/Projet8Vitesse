@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.openclassrooms.projet8vitesse"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.openclassrooms.projet8vitesse"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -48,6 +48,7 @@ dependencies {
 
     implementation("androidx.compose.foundation:foundation-layout-android:1.7.3")
     implementation("com.google.firebase:firebase-inappmessaging-display:21.0.0")
+    implementation(libs.androidx.media3.common.ktx)
     // Room
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")

@@ -10,12 +10,12 @@ sealed class HomeUiState {
     /**
      * État chargé lorsque les données sont en cours de chargement.
      */
-    object Loading : HomeUiState()
+    data object Loading : HomeUiState()
 
     /**
      * État chargé lorsque la liste des candidats est vide.
      */
-    object Empty : HomeUiState()
+    data object Empty : HomeUiState()
 
     /**
      * État chargé lorsque les candidats sont disponibles.

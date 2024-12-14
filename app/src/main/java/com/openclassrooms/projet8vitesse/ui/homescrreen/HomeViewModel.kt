@@ -3,6 +3,7 @@ package com.openclassrooms.projet8vitesse.ui.homescrreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
+import com.openclassrooms.projet8vitesse.domain.usecase.GetCandidateByIdUseCase
 import com.openclassrooms.projet8vitesse.domain.usecase.GetCandidatesUseCase
 import com.openclassrooms.projet8vitesse.domain.usecase.UpdateFavoriteStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getCandidateUseCase: GetCandidatesUseCase,
-    private val updateFavoriteStatusUseCase: UpdateFavoriteStatusUseCase
+    private val updateFavoriteStatusUseCase: UpdateFavoriteStatusUseCase,
+    private val getCandidateByIdUseCase: GetCandidateByIdUseCase
 ) : ViewModel() {
 
     // État de l'écran d'accueil
@@ -33,6 +35,8 @@ class HomeViewModel @Inject constructor(
 
     /**
      * Charge la liste des candidats selon les filtres actuels.
+     * @param filter Le texte à rechercher (nom ou prénom).
+     * @param favoritesOnly Si true, filtre uniquement les favoris.
      */
     fun loadCandidates(filter: String? = null, favoritesOnly: Boolean = false) {
         currentFilter = filter
@@ -58,7 +62,7 @@ class HomeViewModel @Inject constructor(
 
     /**
      * Recharge la liste des candidats en fonction des derniers filtres.
-     * Utilisé après l'ajout d'un candidat.
+     * Utilisé après l’ajout ou la modification d’un candidat.
      */
     fun reloadCandidates() {
         loadCandidates(currentFilter, showFavoritesOnly)
@@ -80,6 +84,8 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
 }
+
 
 

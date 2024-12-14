@@ -4,6 +4,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- ProgressBar pour indiquer le chargement -->
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_margin="16dp" />
+
     <!-- TopAppBar -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/top_app_bar"
@@ -57,6 +69,7 @@
 
     <!-- ScrollView pour rendre l'écran scrollable -->
     <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
@@ -191,6 +204,7 @@
                         android:text="3500 €" />
 
                     <TextView
+                        android:id="@+id/tvConvertedSalary"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"

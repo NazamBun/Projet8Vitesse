@@ -2,8 +2,8 @@ package com.openclassrooms.projet8vitesse.ui.addscreen
 
 import android.app.DatePickerDialog
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
-import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,57 +16,54 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.openclassrooms.projet8vitesse.R
 import com.openclassrooms.projet8vitesse.databinding.FragmentAddEditBinding
-import com.openclassrooms.projet8vitesse.ui.detailscreen.DetailFragment
-import com.openclassrooms.projet8vitesse.utils.DateUtils
+import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.threeten.bp.Instant
-import java.text.SimpleDateFormat
+import org.threeten.bp.ZoneId
+import org.threeten.bp.ZonedDateTime
 import java.util.Calendar
-import java.util.Locale
 
 /**
- * Fragment permettant d'ajouter ou modifier un candidat.
+ * Fragment pour ajouter ou modifier un candidat.
  *
- * Ce fragment gère :
- * - La sélection de la photo
- * - La saisie des informations du candidat
- * - La validation des champs
- * - L'enregistrement du candidat via le ViewModel
- * - La navigation vers l'écran de détail en cas de succès
+ * Ce Fragment affiche simplement l'interface et réagit aux actions de l'utilisateur :
+ * - Afficher les champs (prénom, nom, téléphone, email, date de naissance, salaire, notes).
+ * - Afficher la photo du candidat (ou un placeholder par défaut).
+ * - Permettre de choisir une photo dans la galerie.
+ * - Permettre de choisir une date de naissance.
+ * - Bouton "Sauvegarder" qui demande au ViewModel d'enregistrer.
+ * - Observer les états du ViewModel (succès, erreur, chargement).
+ *
+ * Le Fragment n'a pas de logique métier. Toute la logique complexe (vérification des champs,
+ * insertion en base, etc.) est dans le ViewModel.
  */
 @AndroidEntryPoint
 class AddEditFragment : Fragment() {
 
-    // Liaison au layout du fragment
     private var _binding: FragmentAddEditBinding? = null
     private val binding get() = _binding!!
 
-    // ViewModel pour gérer la logique métier
     private val viewModel: AddEditViewModel by viewModels()
 
-    /**
-     * Lanceur d'activité pour sélectionner une image dans la galerie.
-     * Quand l'utilisateur sélectionne une image, on la met à jour dans le ViewModel,
-     * puis on l'affiche directement dans l'ImageView.
-     */
-    private val pickImageLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            if (uri != null) {
-                val inputStream = requireContext().contentResolver.openInputStream(uri)
-                val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
-
-                if (bitmap != null) {
-                    // Mettre à jour la photo dans le ViewModel
-                    viewModel.updatePhoto(bitmap)
-                    // Afficher immédiatement la photo sélectionnée
-                    binding.candidatePhoto.setImageBitmap(bitmap)
-                }
+    // Lanceur pour ouvrir la galerie et récupérer une image
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        // Cette fonction est appelée quand l'utilisateur a sélectionné une image dans la galerie
+        if (uri != null) {
+            val bitmap = loadBitmapFromUri(uri)
+            if (bitmap != null) {
+                // On informe le ViewModel de la nouvelle photo
+                viewModel.onPhotoSelected(bitmap)
+                // On met à jour l'affichage
+                binding.candidatePhoto.setImageBitmap(bitmap)
+            } else {
+                Toast.makeText(requireContext(), "Impossible de charger l'image", Toast.LENGTH_SHORT).show()
             }
         }
-
-    // ID du candidat, si on est en mode édition, sinon -1
-    private var candidateId: Long = -1
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -77,150 +74,113 @@ class AddEditFragment : Fragment() {
         return binding.root
     }
 
+
+    /**
+     * Appelé lorsque la vue est créée.
+     * On y fait les initialisations UI et l'observation du ViewModel.
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupTopAppBar()
-        observeUiState()
-        setupSaveButton()
-        setupPhotoClick()
-        setupDateOfBirthPicker()
-        setupMode()
-    }
 
-    private fun setupMode() {
-        candidateId = arguments?.getLong(ARG_CANDIDATE_ID, -1) ?: -1
-        if (candidateId != -1L) {
-            // Mode édition
-            binding.topAppBar.title = getString(R.string.edit_candidate)
-            viewModel.loadCandidateForEdit(candidateId)
-            observeCandidateData()
-        } else {
-            // Mode ajout
-            binding.topAppBar.title = getString(R.string.add_candidate)
-        }
+        // Récupération de l'ID du candidat s'il existe dans les arguments
+        val candidateId = arguments?.getLong("candidate_id", -1L) ?: -1L
+        // On informe le ViewModel si c'est un ajout ou une édition
+        viewModel.init(candidateId)
+
+        setupToolbar()
+        setupPhotoClickListener()
+        setupDatePickerClickListener()
+        setupSaveButtonClickListener()
+
+        observeViewModel()
     }
 
     /**
-     * Configure la TopAppBar avec un titre et une icône de navigation.
+     * Configure la barre d'application (toolbar) avec le bouton de retour.
      */
-    private fun setupTopAppBar() {
-        binding.topAppBar.title = getString(R.string.add_candidate)
+    private fun setupToolbar() {
         binding.topAppBar.setNavigationOnClickListener {
-            requireActivity().onBackPressedDispatcher.onBackPressed()
+            // On ferme le fragment (revient en arrière)
+            parentFragmentManager.popBackStack()
         }
     }
 
     /**
-     * Observe candidateData du ViewModel pour pré-remplir les champs lorsqu'on est en mode édition.
+     * Quand on clique sur la photo, on lance la sélection d'image dans la galerie.
      */
-    private fun observeCandidateData() {
-        lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.candidateDataFlow.collect { candidate ->
-                    // Pré-remplir les champs avec les données du candidat
-                    binding.tiFirstname.setText(candidate.firstName)
-                    binding.tiLastname.setText(candidate.lastName)
-                    binding.tiPhone.setText(candidate.phoneNumber)
-                    binding.tiEmail.setText(candidate.email)
-                    binding.tiSalary.setText(candidate.expectedSalary.toString())
-                    binding.tiNotes.setText(candidate.note ?: "")
-
-                    // Photo si disponible
-                    candidate.photo?.let {
-                        binding.candidatePhoto.setImageBitmap(it)
-                    }
-
-                    // Date de naissance
-                    if (candidate.dateOfBirth != Instant.EPOCH) {
-                        val formattedDate = DateUtils.localeDateTimeStringFromInstant(candidate.dateOfBirth)
-                        binding.tieAddEditDateOfBirth.setText(formattedDate)
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Configure l'action du clic sur la photo pour ouvrir la galerie.
-     */
-    private fun setupPhotoClick() {
+    private fun setupPhotoClickListener() {
         binding.candidatePhoto.setOnClickListener {
-            pickImageLauncher.launch("image/*") // Lancer la sélection d'image
+            imagePickerLauncher.launch("image/*")
         }
     }
 
     /**
-     * Configure le champ de sélection de la date de naissance avec un DatePickerDialog.
+     * Quand on clique sur le champ de date, on ouvre un date picker.
      */
-    private fun setupDateOfBirthPicker() {
+    private fun setupDatePickerClickListener() {
         binding.tieAddEditDateOfBirth.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            val datePicker = DatePickerDialog(
-                requireContext(),
-                { _, year, month, dayOfMonth ->
-                    val selectedDate = Calendar.getInstance()
-                    selectedDate.set(year, month, dayOfMonth)
-                    viewModel.updateDateOfBirth(DateUtils.computeInstantFromLocalDate(year,month,dayOfMonth))
-
-                    // Formater la date et l’afficher dans le champ
-                    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                    val formattedDate = dateFormat.format(selectedDate.time)
-                    binding.tieAddEditDateOfBirth.setText(formattedDate)
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            )
-            datePicker.datePicker.maxDate = System.currentTimeMillis()
-            datePicker.show()
+            showDatePicker()
         }
     }
 
     /**
-     * Configure l'action du bouton "Save".
+     * Quand on clique sur le bouton "Sauvegarder", on envoie les données saisies au ViewModel.
      */
-    private fun setupSaveButton() {
+    private fun setupSaveButtonClickListener() {
         binding.saveButton.setOnClickListener {
-            if (validateFields()) {
-                // Récupérer les données depuis les champs
-                val firstName = binding.tiFirstname.text?.toString()?.trim() ?: ""
-                val lastName = binding.tiLastname.text?.toString()?.trim() ?: ""
-                val phoneNumber = binding.tiPhone.text?.toString()?.trim() ?: ""
-                val email = binding.tiEmail.text?.toString()?.trim() ?: ""
-                val dateOfBirth = binding.tieAddEditDateOfBirth.text?.toString()?.trim() ?: ""
-                val salary = binding.tiSalary.text?.toString()?.trim() ?: "0"
-                val notes = binding.tiNotes.text?.toString()?.trim() ?: ""
+            // On transmet au ViewModel les dernières valeurs saisies par l'utilisateur
+            viewModel.onFirstNameChanged(binding.tiFirstname.text.toString())
+            viewModel.onLastNameChanged(binding.tiLastname.text.toString())
+            viewModel.onPhoneChanged(binding.tiPhone.text.toString())
+            viewModel.onEmailChanged(binding.tiEmail.text.toString())
+            viewModel.onSalaryChanged(binding.tiSalary.text.toString())
+            viewModel.onNotesChanged(binding.tiNotes.text.toString())
 
-                // Mettre à jour les données du candidat dans le ViewModel
-                viewModel.updateCandidateData(
-                    firstName = firstName,
-                    lastName = lastName,
-                    phoneNumber = phoneNumber,
-                    email = email,
-                    expectedSalary = salary.toInt(),
-                    notes = notes
-                )
-
-                // Appeler la fonction pour sauvegarder le candidat
-                viewModel.onSaveCandidate()
-            }
+            // On demande au ViewModel de sauvegarder
+            viewModel.onSaveClicked()
         }
     }
 
     /**
-     * Observe l'état de l'interface utilisateur via le ViewModel.
-     *
-     * Utilise repeatOnLifecycle pour éviter les pertes de ressources.
+     * Observe l'état du ViewModel et met à jour l'UI en conséquence.
      */
-    private fun observeUiState() {
-        lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
+    private fun observeViewModel() {
+        // On utilise repeatOnLifecycle avec Lifecycle.State.STARTED
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                viewModel.uiState.collectLatest { state ->
                     when (state) {
-                        is AddEditUiState.Loading -> showLoading()
-                        is AddEditUiState.Success -> showSuccess(state.message, state.candidateId)
-                        is AddEditUiState.Error -> showError(state.error)
-                        AddEditUiState.Idle -> Unit // Aucun changement
+                        is AddEditUiState.Idle -> {
+                            // Rien de spécial
+                        }
+                        is AddEditUiState.Loading -> {
+                            showLoading(true)
+                        }
+                        is AddEditUiState.Loaded -> {
+                            showLoading(false)
+                            updateUIWithData(state)
+                        }
+                        is AddEditUiState.Success -> {
+                            showLoading(false)
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+                            // Retour à l'écran précédent (liste des candidats)
+                            parentFragmentManager.popBackStack()
+                        }
+                        is AddEditUiState.Error -> {
+                            showLoading(false)
+                            Toast.makeText(requireContext(), state.error, Toast.LENGTH_SHORT).show()
+                        }
+                        is AddEditUiState.ErrorMandatoryFields -> {
+                            showLoading(false)
+                            Toast.makeText(requireContext(), state.error, Toast.LENGTH_SHORT).show()
+                            showMandatoryFieldsErrors(state.emptyFields)
+                        }
+                        is AddEditUiState.ErrorEmailFormat -> {
+                            showLoading(false)
+                            Toast.makeText(requireContext(), state.error, Toast.LENGTH_SHORT).show()
+                            // On peut afficher une erreur sur le champ email
+                            binding.tilEmail.error = getString(R.string.mandatory_field_error)
+                        }
                     }
                 }
             }
@@ -228,129 +188,126 @@ class AddEditFragment : Fragment() {
     }
 
     /**
-     * Validation des champs obligatoires et du format de l'email.
-     * Retourne true si tous les champs sont remplis correctement, sinon false.
+     * Met à jour l'interface avec les données chargées (en mode ajout ou édition).
      */
-    private fun validateFields(): Boolean {
-        var allValid = true
+    private fun updateUIWithData(state: AddEditUiState.Loaded) {
+        binding.topAppBar.setTitle(state.titleResId)
 
-        // Récupération des valeurs saisies
-        val firstName = binding.tiFirstname.text?.toString()?.trim() ?: ""
-        val lastName = binding.tiLastname.text?.toString()?.trim() ?: ""
-        val phoneNumber = binding.tiPhone.text?.toString()?.trim() ?: ""
-        val email = binding.tiEmail.text?.toString()?.trim() ?: ""
-        val dateOfBirth = binding.tieAddEditDateOfBirth.text?.toString()?.trim() ?: ""
-        val salary = binding.tiSalary.text?.toString()?.trim() ?: ""
-        val notes = binding.tiNotes.text?.toString()?.trim() ?: ""
+        if (state.photo != null) {
+            binding.candidatePhoto.setImageBitmap(state.photo)
+        } else {
+            binding.candidatePhoto.setImageResource(R.drawable.media)
+        }
 
-        // Réinitialisation des erreurs
+        binding.tiFirstname.setText(state.firstName)
+        binding.tiLastname.setText(state.lastName)
+        binding.tiPhone.setText(state.phone)
+        binding.tiEmail.setText(state.email)
+        binding.tiSalary.setText(state.salary)
+        binding.tiNotes.setText(state.notes)
+
+        if (state.dateOfBirth != null) {
+            binding.tieAddEditDateOfBirth.setText(formatDate(state.dateOfBirth))
+        } else {
+            binding.tieAddEditDateOfBirth.setText("")
+        }
+
+        // Réinitialiser les erreurs (au cas où)
+        clearAllErrors()
+    }
+
+    /**
+     * Affiche ou cache la ProgressBar et les champs.
+     * Si isLoading est vrai, on affiche un chargement.
+     * Sinon, on affiche le formulaire.
+     */
+    private fun showLoading(isLoading: Boolean) {
+        if (isLoading) {
+            binding.progressBar.visibility = View.VISIBLE
+            binding.scrollView.visibility = View.GONE
+            binding.saveButton.visibility = View.GONE
+        } else {
+            binding.progressBar.visibility = View.GONE
+            binding.scrollView.visibility = View.VISIBLE
+            binding.saveButton.visibility = View.VISIBLE
+        }
+    }
+
+    /**
+     * Affiche une boîte de sélection de date (DatePickerDialog).
+     * Quand l'utilisateur choisit une date, on met à jour le ViewModel.
+     */
+    private fun showDatePicker() {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        val dpd = DatePickerDialog(requireContext(), { _, y, m, d ->
+            val chosenDate = ZonedDateTime.of(y, m + 1, d, 0, 0, 0, 0, ZoneId.systemDefault()).toInstant()
+            viewModel.onDateOfBirthSelected(chosenDate)
+            binding.tieAddEditDateOfBirth.setText(formatDate(chosenDate))
+        }, year, month, day)
+
+        // Empêche de sélectionner une date future
+        dpd.datePicker.maxDate = System.currentTimeMillis()
+
+        dpd.show()
+    }
+
+    /**
+     * Convertit un Instant (date-heure universelle) en texte lisible "jj/mm/aaaa".
+     */
+    private fun formatDate(instant: Instant): String {
+        val zdt = instant.atZone(ZoneId.systemDefault())
+        val day = zdt.dayOfMonth.toString().padStart(2, '0')
+        val month = zdt.monthValue.toString().padStart(2, '0')
+        val year = zdt.year.toString()
+        return "$day/$month/$year"
+    }
+
+    /**
+     * Charge un Bitmap à partir d'une Uri (image de la galerie).
+     * Retourne le Bitmap ou null si échec.
+     */
+    private fun loadBitmapFromUri(uri: Uri): android.graphics.Bitmap? {
+        val inputStream = requireContext().contentResolver.openInputStream(uri)
+        return BitmapFactory.decodeStream(inputStream)
+    }
+
+    /**
+     * Affiche les erreurs sur les champs obligatoires non remplis.
+     */
+    private fun showMandatoryFieldsErrors(emptyFields: List<AddEditUiState.MandatoryField>) {
+        // Réinitialiser toutes les erreurs d'abord
+        clearAllErrors()
+
+        // Pour chaque champ vide, afficher une erreur
+        emptyFields.forEach { field ->
+            when (field) {
+                AddEditUiState.MandatoryField.FIRST_NAME -> binding.tilFirstname.error = getString(R.string.mandatory_field_error)
+                AddEditUiState.MandatoryField.LAST_NAME -> binding.tilLastname.error = getString(R.string.mandatory_field_error)
+                AddEditUiState.MandatoryField.PHONE -> binding.tilPhone.error = getString(R.string.mandatory_field_error)
+                AddEditUiState.MandatoryField.EMAIL -> binding.tilEmail.error = getString(R.string.mandatory_field_error)
+                AddEditUiState.MandatoryField.DATE_OF_BIRTH -> binding.tilAddEditDateOfBirth.error = getString(R.string.mandatory_field_error)
+            }
+        }
+    }
+
+    /**
+     * Réinitialise toutes les erreurs.
+     */
+    private fun clearAllErrors() {
         binding.tilFirstname.error = null
         binding.tilLastname.error = null
         binding.tilPhone.error = null
         binding.tilEmail.error = null
         binding.tilAddEditDateOfBirth.error = null
-        binding.tilSalary.error = null
-        binding.tilNotes.error = null
-
-        // Vérification des champs obligatoires
-        if (firstName.isEmpty()) {
-            binding.tilFirstname.error = getString(R.string.missing_fields_error)
-            allValid = false
-        }
-
-        if (lastName.isEmpty()) {
-            binding.tilLastname.error = getString(R.string.missing_fields_error)
-            allValid = false
-        }
-
-        if (phoneNumber.isEmpty()) {
-            binding.tilPhone.error = getString(R.string.missing_fields_error)
-            allValid = false
-        }
-
-        if (email.isEmpty()) {
-            binding.tilEmail.error = getString(R.string.missing_fields_error)
-            allValid = false
-        } else {
-            // Vérification du format de l'email
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                binding.tilEmail.error = getString(R.string.invalid_email_format)
-                allValid = false
-            }
-        }
-
-        if (dateOfBirth.isEmpty()) {
-            // L'utilisateur n'a pas choisi de date, on affiche une erreur
-            binding.tilAddEditDateOfBirth.error = getString(R.string.missing_date_of_birth_error)
-            allValid = false
-        }
-
-        // Vérification du salaire
-        if (salary.isEmpty()) {
-            binding.tilSalary.error = getString(R.string.missing_fields_error)
-            allValid = false
-        }
-
-        // Vérification des notes
-        if (notes.isEmpty()) {
-            binding.tilNotes.error = getString(R.string.missing_fields_error)
-            allValid = false
-        }
-
-        return allValid
-    }
-
-
-    /**
-     * Affiche l'état de chargement dans l'interface utilisateur.
-     */
-    private fun showLoading() {
-        // Afficher une ProgressBar ou tout autre indicateur visuel
-        Toast.makeText(requireContext(), "Loading...", Toast.LENGTH_SHORT).show()
-    }
-
-    /**
-     * Affiche un message de succès.
-     * @param message Le message à afficher.
-     */
-    private fun showSuccess(message: String, candidateId: Long) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-
-        val detailFragment = DetailFragment.newInstance(candidateId)
-        requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, detailFragment)
-            .addToBackStack(null)
-            .commit()
-    }
-
-    /**
-     * Affiche un message d'erreur.
-     * @param error Le message d'erreur à afficher.
-     */
-    private fun showError(error: String) {
-        Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
-
-    companion object {
-        private const val ARG_CANDIDATE_ID = "candidate_id"
-
-        /**
-         * Crée une instance d'AddEditFragment pour éditer un candidat existant.
-         * @param candidateId L'ID du candidat à modifier.
-         */
-        fun newInstance(candidateId: Long): AddEditFragment {
-            val fragment = AddEditFragment()
-            val args = Bundle()
-            args.putLong(ARG_CANDIDATE_ID, candidateId)
-            fragment.arguments = args
-            return fragment
-        }
-    }
-
 }
 

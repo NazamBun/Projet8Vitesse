@@ -27,7 +27,7 @@ interface CandidateRepository {
      * @param id L'identifiant unique du candidat.
      * @return Un flux contenant le candidat correspondant.
      */
-    fun getById(id: Long): Flow<Candidate>
+    fun getById(id: Long): Flow<Candidate?>
 
     /**
      * Ajouter ou mettre à jour un candidat.

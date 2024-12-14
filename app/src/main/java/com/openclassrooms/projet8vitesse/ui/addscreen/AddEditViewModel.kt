@@ -1,10 +1,12 @@
 package com.openclassrooms.projet8vitesse.ui.addscreen
 
 import android.graphics.Bitmap
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.projet8vitesse.data.repository.CandidateRepository
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
+import com.openclassrooms.projet8vitesse.domain.usecase.GetCandidateByIdUseCase
 import com.openclassrooms.projet8vitesse.domain.usecase.InsertCandidateUseCase
 import com.openclassrooms.projet8vitesse.domain.usecase.UpdateCandidateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,138 +16,233 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.threeten.bp.Instant
 import java.util.Date
+import java.util.regex.Pattern
 import javax.inject.Inject
 
+
 /**
- * ViewModel pour gérer les données et la logique du fragment Add/Edit.
+ * ViewModel pour l'écran Add/Edit Candidate.
  *
- * Cette classe est responsable de :
- * - Mettre à jour les informations du candidat en cours.
- * - Valider les données du candidat.
- * - Insérer un nouveau candidat dans la base de données.
- * - Gérer l'état de l'interface utilisateur (chargement, succès, erreur).
+ * Objectif : Gérer la logique pour l'ajout ou la modification d'un candidat.
+ * On applique les bonnes pratiques :
+ * - MVVM : Ce ViewModel ne touche pas à l'UI directement, il expose un état (UiState).
+ * - Clean Architecture : Le ViewModel dépend de Use Cases, pas de la couche de données directement.
+ * - SOLID : Une seule responsabilité, pas de logique de navigation, pas de logique UI complexe.
+ * - Code facile : Variables claires, commentaires simples, pas de complexité inutile.
+ *
+ * User stories (pour AddEditScreen) :
+ * - Afficher une top app bar avec "Ajouter un candidat" ou "Modifier un candidat".
+ * - Icône pour revenir en arrière.
+ * - Permettre d'ajouter ou changer la photo du candidat (placeholder par défaut).
+ * - Champs obligatoires : prénom, nom, téléphone, email, date de naissance.
+ * - Champs facultatifs : salaire, notes.
+ * - Vérifier que les champs obligatoires ne soient pas vides.
+ * - Vérifier le format de l'email.
+ * - Bouton "Sauvegarder" pour insérer ou mettre à jour en base via les Use Cases.
+ * - Si succès : fermer l'écran et revenir à l'accueil.
+ *
+ * Les Use Cases injectés :
+ * - InsertCandidateUseCase : pour ajouter un candidat
+ * - GetCandidateByIdUseCase : pour charger un candidat existant (mode édition)
+ * - UpdateCandidateUseCase : pour mettre à jour un candidat existant
  */
 @HiltViewModel
 class AddEditViewModel @Inject constructor(
+    /**
+     * Use case pour insérer un candidat dans la base de données.
+     * Utilisé lorsqu'on ajoute un nouveau candidat.
+     */
     private val insertCandidateUseCase: InsertCandidateUseCase,
-    private val updateCandidateUseCase: UpdateCandidateUseCase,
-    private val repository: CandidateRepository
-) : ViewModel() {
 
-    // État actuel de l'opération (succès, erreur, chargement, etc.).
+    /**
+     * Use case pour récupérer un candidat grâce à son identifiant.
+     * Utilisé lorsqu'on est en mode édition pour pré-remplir les champs.
+     */
+    private val getCandidateByIdUseCase: GetCandidateByIdUseCase,
+
+    /**
+     * Use case pour mettre à jour un candidat existant.
+     * Utilisé en mode édition, quand l'utilisateur modifie les informations d'un candidat.
+     */
+    private val updateCandidateUseCase: UpdateCandidateUseCase
+) : ViewModel() {
+    // État de l'UI : on part d'un état Idle sans erreur, sans chargement, sans données pré-remplies
     private val _uiState = MutableStateFlow<AddEditUiState>(AddEditUiState.Idle)
     val uiState: StateFlow<AddEditUiState> = _uiState
 
-    private var candidatePhoto: Bitmap? = null
-    private var candidateDateOfBirth: Instant? = null
+    // Variables pour stocker les données du formulaire
+    private var candidateId: Long = -1L
+    private var firstName: String = ""
+    private var lastName: String = ""
+    private var phone: String = ""
+    private var email: String = ""
+    private var dateOfBirth: Instant? = null
+    private var salary: Int? = null
+    private var notes: String = ""
+    private var photo: Bitmap? = null
 
-    private val candidateData = MutableStateFlow(Candidate())
-    val candidateDataFlow = candidateData.asStateFlow()
-
-    /**
-     * Met à jour la photo du candidat.
-     * @param photo Le bitmap représentant la photo sélectionnée.
-     */
-    fun updatePhoto(photo: Bitmap) {
-        candidatePhoto = photo
+    // Méthode pour initialiser l'écran
+    // Si on passe un candidateId existant, on charge le candidat et pré-remplit les champs.
+    // Sinon, on est en mode ajout.
+    fun init(candidateId: Long) {
+        if (candidateId <= 0) {
+            // Mode Ajout
+            this.candidateId = -1
+            // On affiche "Ajouter un candidat"
+            _uiState.value = AddEditUiState.Loaded(
+                titleResId = com.openclassrooms.projet8vitesse.R.string.add_candidate,
+                isEditing = false,
+                photo = null, // Placeholder par défaut géré par le Fragment
+                firstName = "",
+                lastName = "",
+                phone = "",
+                email = "",
+                dateOfBirth = null,
+                salary = "",
+                notes = ""
+            )
+        } else {
+            // Mode Édition
+            this.candidateId = candidateId
+            loadCandidate(candidateId)
+        }
     }
 
-    /**
-     * Met à jour la date de naissance du candidat.
-     * @param instant L'instant représentant la date de naissance sélectionnée.
-     */
-    fun updateDateOfBirth(instant: Instant) {
-        candidateDateOfBirth = instant
-    }
-
-    /**
-     * Charge un candidat existant pour l'édition.
-     * @param candidateId L'ID du candidat à charger.
-     */
-    fun loadCandidateForEdit(candidateId: Long) {
+    // Charge un candidat existant pour le mode édition
+    private fun loadCandidate(id: Long) {
+        _uiState.value = AddEditUiState.Loading
         viewModelScope.launch {
-            repository.getById(candidateId).collect { candidate ->
-                // Met à jour candidateData, ainsi que la photo et la date
-                candidateData.value = candidate
-                candidatePhoto = candidate.photo
-                candidateDateOfBirth = candidate.dateOfBirth
+            getCandidateByIdUseCase.execute(id).collect { candidate ->
+                if (candidate == null) {
+                    // Aucune donnée => Erreur
+                    _uiState.value = AddEditUiState.Error("Candidat introuvable")
+                } else {
+                    // On remplit nos variables internes
+                    firstName = candidate.firstName
+                    lastName = candidate.lastName
+                    phone = candidate.phoneNumber
+                    email = candidate.email
+                    dateOfBirth = candidate.dateOfBirth
+                    salary = candidate.expectedSalary
+                    notes = candidate.note ?: ""
+                    photo = candidate.photo
+                    // On met à jour l'UI avec les données existantes
+                    _uiState.value = AddEditUiState.Loaded(
+                        titleResId = com.openclassrooms.projet8vitesse.R.string.edit_candidate,
+                        isEditing = true,
+                        photo = photo,
+                        firstName = firstName,
+                        lastName = lastName,
+                        phone = phone,
+                        email = email,
+                        dateOfBirth = dateOfBirth,
+                        salary = salary?.toString() ?: "",
+                        notes = notes
+                    )
+                }
             }
         }
     }
 
-    /**
-     * Met à jour les données textuelles du candidat (prénom, nom, téléphone, email, salaire, notes).
-     * Cette méthode est appelée après la validation des champs dans le fragment.
-     *
-     * @param firstName Prénom du candidat.
-     * @param lastName Nom du candidat.
-     * @param phoneNumber Numéro de téléphone du candidat.
-     * @param email Adresse email du candidat.
-     * @param expectedSalary Salaire attendu du candidat (en nombre entier).
-     * @param notes Notes relatives au candidat.
-     */
-    fun updateCandidateData(
-        firstName: String,
-        lastName: String,
-        phoneNumber: String,
-        email: String,
-        expectedSalary: Int,
-        notes: String
-    ) {
-        val current = candidateData.value
-        candidateData.value = current.copy(
+    // Méthodes pour mettre à jour les champs :
+
+    fun onFirstNameChanged(value: String) {
+        firstName = value
+    }
+
+    fun onLastNameChanged(value: String) {
+        lastName = value
+    }
+
+    fun onPhoneChanged(value: String) {
+        phone = value
+    }
+
+    fun onEmailChanged(value: String) {
+        email = value
+    }
+
+    fun onDateOfBirthSelected(value: Instant) {
+        dateOfBirth = value
+    }
+
+    fun onSalaryChanged(value: String) {
+        salary = value.toIntOrNull() // Si non convertible, null
+    }
+
+    fun onNotesChanged(value: String) {
+        notes = value
+    }
+
+    fun onPhotoSelected(bitmap: Bitmap) {
+        photo = bitmap
+    }
+
+    // Méthode déclenchée lorsque l'utilisateur clique sur "Sauvegarder"
+    // On vérifie les champs obligatoires et le format de l'email.
+    // Si OK, on insère ou on met à jour.
+    // Puis on signale le succès pour fermer l'écran.
+    fun onSaveClicked() {
+        val emptyFields = mutableListOf<AddEditUiState.MandatoryField>()
+
+        if (firstName.isBlank()) emptyFields.add(AddEditUiState.MandatoryField.FIRST_NAME)
+        if (lastName.isBlank()) emptyFields.add(AddEditUiState.MandatoryField.LAST_NAME)
+        if (phone.isBlank()) emptyFields.add(AddEditUiState.MandatoryField.PHONE)
+        if (email.isBlank()) emptyFields.add(AddEditUiState.MandatoryField.EMAIL)
+        if (dateOfBirth == null) emptyFields.add(AddEditUiState.MandatoryField.DATE_OF_BIRTH)
+
+        if (emptyFields.isNotEmpty()) {
+            _uiState.value = AddEditUiState.ErrorMandatoryFields(
+                "Veuillez remplir tous les champs obligatoires.",
+                emptyFields
+            )
+            return
+        }
+
+        // Vérifier le format de l'email
+        if (!isEmailValid(email)) {
+            _uiState.value = AddEditUiState.ErrorEmailFormat("Format d'email invalide.")
+            return
+        }
+
+        // Tout est bon, on peut sauvegarder
+        _uiState.value = AddEditUiState.Loading
+
+        val candidateToSave = Candidate(
+            id = if (candidateId > 0) candidateId else null,
             firstName = firstName,
             lastName = lastName,
-            phoneNumber = phoneNumber,
+            photo = photo, // S'il est null, on affichera placeholder côté UI
+            phoneNumber = phone,
             email = email,
-            expectedSalary = expectedSalary,
-            note = notes
-        )
-    }
-
-    fun onSaveCandidate() {
-        val candidate = candidateData.value.copy(
-            photo = candidatePhoto,
-            dateOfBirth = candidateDateOfBirth?:Instant.now()
+            dateOfBirth = dateOfBirth!!, // Non null car checké
+            expectedSalary = salary ?: 0,
+            note = notes,
+            isFavorite = false
         )
 
-        if (validateCandidate(candidate)) {
-            insertCandidate(candidate)
-        } else {
-            _uiState.value = AddEditUiState.Error("Invalid candidate data")
-        }
-    }
-
-    /**
-     * Vérifie que les champs obligatoires du candidat sont remplis et valides.
-     * @param candidate Le candidat à valider.
-     * @return true si le candidat est valide, false sinon.
-     */
-    private fun validateCandidate(candidate: Candidate): Boolean {
-        return candidate.firstName.isNotBlank() &&
-                candidate.lastName.isNotBlank() &&
-                candidate.phoneNumber.isNotBlank() &&
-                candidate.email.isNotBlank() &&
-                candidate.dateOfBirth != Instant.EPOCH
-    }
-
-    /**
-     * Insère un candidat dans la base de données.
-     * @param candidate Les informations du candidat à insérer.
-     */
-    private fun insertCandidate(candidate: Candidate) {
         viewModelScope.launch {
-            _uiState.value = AddEditUiState.Loading
             try {
-                val id = insertCandidateUseCase.invoke(candidate)
-                if (id > 0) {
-                    _uiState.value = AddEditUiState.Success("Candidate added successfully!", id)
+                if (candidateId > 0) {
+                    // Mise à jour
+                    updateCandidateUseCase.invoke(candidateToSave)
+                    _uiState.value = AddEditUiState.Success("Candidat mis à jour avec succès")
                 } else {
-                    _uiState.value = AddEditUiState.Error("Failed to add candidate.")
+                    // Ajout
+                    insertCandidateUseCase.invoke(candidateToSave)
+                    _uiState.value = AddEditUiState.Success("Candidat ajouté avec succès")
                 }
             } catch (e: Exception) {
-                _uiState.value = AddEditUiState.Error(e.message ?: "Unexpected error.")
+                _uiState.value = AddEditUiState.Error("Erreur lors de la sauvegarde.")
             }
         }
+    }
+
+    // Vérification simple de l'email via un pattern
+    private fun isEmailValid(email: String): Boolean {
+        val emailPattern = Pattern.compile(
+            "^[A-Za-z0-9+_.-]+@(.+)$"
+        )
+        return emailPattern.matcher(email).matches()
     }
 }

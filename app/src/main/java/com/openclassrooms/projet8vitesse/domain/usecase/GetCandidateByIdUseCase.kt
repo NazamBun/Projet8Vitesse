@@ -13,7 +13,7 @@ class GetCandidateByIdUseCase @Inject constructor(
      * @param id L'identifiant unique du candidat.
      * @return Un flux contenant le candidat correspondant.
      */
-    fun execute(id: Long): Flow<Candidate> {
+    fun execute(id: Long): Flow<Candidate?> {
         return candidateRepository.getById(id)
     }
 }

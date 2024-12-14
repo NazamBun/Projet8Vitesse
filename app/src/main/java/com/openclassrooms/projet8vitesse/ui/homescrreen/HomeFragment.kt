@@ -1,6 +1,8 @@
 package com.openclassrooms.projet8vitesse.ui.homescrreen
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +13,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.tabs.TabLayout
 import com.openclassrooms.projet8vitesse.R
@@ -18,6 +21,7 @@ import com.openclassrooms.projet8vitesse.databinding.FragmentHomeBinding
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import com.openclassrooms.projet8vitesse.ui.homescrreen.adapter.CandidateAdapter
 import com.openclassrooms.projet8vitesse.ui.MainActivity
+import com.openclassrooms.projet8vitesse.ui.addscreen.AddEditFragment
 import com.openclassrooms.projet8vitesse.ui.detailscreen.DetailFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -49,16 +53,53 @@ class HomeFragment : Fragment() {
         setupRecyclerView()
         setupTabLayout()
         setupSearchBar()
-        setupFloatingActionButton()
         observeViewModel()
 
-        // Charger les candidats initiaux
-        viewModel.loadCandidates() // Charger les candidats initiaux
 
-        // Écouter les résultats de l'ajout/modification d'un candidat
-        listenToAddCandidateResult()
+        // Charger les candidats initiaux
+        viewModel.loadCandidates()
+
+        // Configuration du FAB pour naviguer vers AddEditFragment
+        binding.fabAddCandidate.setOnClickListener {
+            navigateToAddEditFragment()
+        }
 
     }
+
+    /**
+     * Navigue vers le fragment AddEditFragment pour ajouter un candidat.
+     */
+    private fun navigateToAddEditFragment() {
+        parentFragmentManager.beginTransaction()
+            .replace(
+                R.id.fragment_container, // ID du conteneur défini dans l'activité principale
+                AddEditFragment()
+            )
+            .addToBackStack(null) // Permet de revenir en arrière avec le bouton retour
+            .commit()
+    }
+
+
+
+    /**
+     * Configure la barre de recherche.
+     */
+    private fun setupSearchBar() {
+        binding.searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // Filtrer les candidats en fonction du texte saisi
+                viewModel.loadCandidates(
+                    filter = s?.toString(),
+                    favoritesOnly = binding.tabLayout.selectedTabPosition == 1
+                )
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+    }
+
 
     /**
      * Configure le RecyclerView et son adapter.
@@ -74,16 +115,21 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Configure le TabLayout pour les onglets "Tous" et "Favoris".
+     * Configure le TabLayout avec des onglets dédiés pour "Tous" et "Favoris".
      */
     private fun setupTabLayout() {
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.all_candidates))
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.favorite_candidates))
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_all_candidates)) // 🇫🇷 Tous
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText(R.string.tab_favorite_candidates))
 
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
-                val showFavorites = tab?.position == 1
-                viewModel.loadCandidates(favoritesOnly = showFavorites)
+                when (tab?.position) {
+                    0 -> viewModel.loadCandidates(filter = binding.searchEditText.text.toString())
+                    1 -> viewModel.loadCandidates(
+                        filter = binding.searchEditText.text.toString(),
+                        favoritesOnly = true
+                    )
+                }
             }
 
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
@@ -91,25 +137,9 @@ class HomeFragment : Fragment() {
         })
     }
 
-    /**
-     * Configure la barre de recherche pour filtrer les candidats.
-     */
-    private fun setupSearchBar() {
-        binding.searchEditText.setOnEditorActionListener { _, _, _ ->
-            val query = binding.searchEditText.text.toString()
-            viewModel.loadCandidates(filter = query)
-            true
-        }
-    }
 
-    /**
-     * Configure le Floating Action Button pour ajouter un candidat.
-     */
-    private fun setupFloatingActionButton() {
-        binding.fabAddCandidate.setOnClickListener {
-            (requireActivity() as MainActivity).navigateToAddEdit()
-        }
-    }
+
+
 
     /**
      * Observe les changements d'état dans le ViewModel.
@@ -129,22 +159,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    /**
-     * Écoute les résultats envoyés par `AddEditFragment` pour recharger la liste.
-     */
-    private fun listenToAddCandidateResult() {
-        setFragmentResultListener("add_candidate_request") { _, bundle ->
-            val candidateAdded = bundle.getBoolean("candidate_added", false)
-            if (candidateAdded) {
-                viewModel.reloadCandidates() // Recharger la liste des candidats
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.candidate_added_successfully),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
 
     /**
      * Affiche l'état de chargement.
@@ -157,6 +171,7 @@ class HomeFragment : Fragment() {
 
     /**
      * Affiche les candidats dans le RecyclerView.
+     * @param candidates La liste des candidats à afficher.
      */
     private fun showCandidates(candidates: List<Candidate>) {
         _binding?.let {
@@ -171,12 +186,11 @@ class HomeFragment : Fragment() {
      * Affiche un message d'état vide si aucun candidat n'est disponible.
      */
     private fun showEmptyState() {
-        _binding?.let {
-            binding.progressBar.visibility = View.GONE
-            binding.recyclerView.visibility = View.GONE
-            binding.emptyStateText.visibility = View.VISIBLE
-        }
+        binding.progressBar.visibility = View.GONE
+        binding.recyclerView.visibility = View.GONE
+        binding.emptyStateText.visibility = View.VISIBLE
     }
+
 
     /**
      * Affiche un message d'erreur.
@@ -194,7 +208,11 @@ class HomeFragment : Fragment() {
      * @param candidate Le candidat sélectionné.
      */
     private fun onCandidateClicked(candidate: Candidate) {
-        val fragment = DetailFragment.newInstance(candidate.id ?: 0)
+        val fragment = DetailFragment().apply {
+            arguments = Bundle().apply {
+                putLong("candidate_id", candidate.id ?: -1L)
+            }
+        }
         requireActivity().supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .addToBackStack(null)

@@ -16,6 +16,17 @@
         app:navigationIcon="@drawable/ic_back_arrow"
         app:title="@string/add_candidate" />
 
+    <!-- ProgressBar pour l'état de chargement -->
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
     <!-- Conteneur défilable -->
     <ScrollView
         android:id="@+id/scroll_view"
