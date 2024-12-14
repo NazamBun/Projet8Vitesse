@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -55,13 +56,17 @@ class AddEditFragment : Fragment() {
         if (uri != null) {
             val bitmap = loadBitmapFromUri(uri)
             if (bitmap != null) {
+                Log.d("AddEditFragment", "Image chargée avec succès.")
                 // On informe le ViewModel de la nouvelle photo
                 viewModel.onPhotoSelected(bitmap)
                 // On met à jour l'affichage
                 binding.candidatePhoto.setImageBitmap(bitmap)
             } else {
+                Log.e("AddEditFragment", "Impossible de charger l'image depuis l'URI: $uri")
                 Toast.makeText(requireContext(), "Impossible de charger l'image", Toast.LENGTH_SHORT).show()
             }
+        } else {
+            Log.e("AddEditFragment", "URI de l'image est null.")
         }
     }
 
