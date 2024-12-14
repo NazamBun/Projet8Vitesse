@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import com.openclassrooms.projet8vitesse.domain.usecase.DeleteCandidateUseCase
 import com.openclassrooms.projet8vitesse.domain.usecase.GetCandidateByIdUseCase
+import com.openclassrooms.projet8vitesse.domain.usecase.GetConversionRateUseCase
 import com.openclassrooms.projet8vitesse.domain.usecase.UpdateFavoriteStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +45,8 @@ import javax.inject.Inject
 class DetailViewModel @Inject constructor(
     private val getCandidateByIdUseCase: GetCandidateByIdUseCase,
     private val updateFavoriteStatusUseCase: UpdateFavoriteStatusUseCase,
-    private val deleteCandidateUseCase: DeleteCandidateUseCase
+    private val deleteCandidateUseCase: DeleteCandidateUseCase,
+    private val getConversionRateUseCase: GetConversionRateUseCase
 ) : ViewModel() {
 
     // État de l'écran : Loading, Success(candidate), Error(message)
@@ -60,6 +62,7 @@ class DetailViewModel @Inject constructor(
      * Sinon, en cas d'erreur ou candidat introuvable, [DetailUiState.Error].
      *
      * @param candidateId L'ID du candidat à afficher
+     * Charge un candidat par son ID et calcule le salaire en livres.
      */
     fun loadCandidate(candidateId: Long) {
         _uiState.value = DetailUiState.Loading
@@ -73,7 +76,17 @@ class DetailViewModel @Inject constructor(
                         _uiState.value = DetailUiState.Error("Candidat introuvable")
                     } else {
                         currentCandidate = candidate
-                        _uiState.value = DetailUiState.Success(candidate)
+                        val convertedSalary = try {
+                            val rate = getConversionRateUseCase.execute()
+                            val converted = candidate.expectedSalary * rate
+                            String.format("soit £ %.2f", converted)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // En cas de problème avec l'API, on met un fallback
+                            "soit £ ??"
+                        }
+
+                        _uiState.value = DetailUiState.Success(candidate, convertedSalary)
                     }
                 }
         }
@@ -88,14 +101,14 @@ class DetailViewModel @Inject constructor(
         val candidate = currentCandidate ?: return
         viewModelScope.launch {
             try {
-                // On inverse le statut
                 val newStatus = !candidate.isFavorite
                 updateFavoriteStatusUseCase.execute(candidate.id!!, newStatus)
-
-                // Mettre à jour le candidat courant
                 currentCandidate = candidate.copy(isFavorite = newStatus)
-                // Mettre à jour l'UI
-                _uiState.value = DetailUiState.Success(currentCandidate!!)
+                // Recalculer le salaire converti si besoin (pas forcément nécessaire)
+                val oldState = _uiState.value
+                if (oldState is DetailUiState.Success) {
+                    _uiState.value = oldState.copy(candidate = currentCandidate!!)
+                }
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error("Impossible de changer le statut favori")
             }
@@ -113,17 +126,13 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 deleteCandidateUseCase.execute(candidate)
-                // Une fois supprimé, on ne met pas à jour le uiState ici,
-                // car on veut que le Fragment revienne à l'écran précédent.
-                // Le Fragment réagira à cet événement.
-                // On pourrait émettre un état spécifique si besoin (ex: DetailUiState.Deleted)
-                // Mais ici, on laissera le fragment réagir différemment. On peut par exemple
-                // créer un autre StateFlow ou un Event pour signaler la suppression.
+                // Le fragment gère le retour en arrière
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error("Erreur lors de la suppression")
             }
         }
     }
+
 
     /**
      * Calcule l'âge du candidat à partir de sa date de naissance.

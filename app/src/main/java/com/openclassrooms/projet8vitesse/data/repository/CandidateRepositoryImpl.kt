@@ -40,13 +40,7 @@ class CandidateRepositoryImpl @Inject constructor(
      */
     override fun getById(candidateId: Long): Flow<Candidate?> {
         return candidateDao.getById(candidateId).map { candidateDto ->
-            if (candidateDto == null) {
-                Log.e("CandidateRepositoryImpl", "No candidate found with ID: $candidateId")
-                null
-            } else {
-                Log.d("CandidateRepositoryImpl", "Found candidate: $candidateDto")
-                candidateDto.toModel()
-            }
+            candidateDto?.toModel() // Vérification avant d'appeler toModel()
         }
     }
 

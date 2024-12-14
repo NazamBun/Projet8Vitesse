@@ -16,7 +16,10 @@ sealed class DetailUiState {
      * État affichant les informations du candidat.
      * @param candidate Les détails du candidat.
      */
-    data class Success(val candidate: Candidate) : DetailUiState()
+    data class Success(
+        val candidate: Candidate,
+        val convertedSalary: String
+    ) : DetailUiState()
 
     /**
      * État affichant une erreur.
