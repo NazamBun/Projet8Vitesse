@@ -5,27 +5,20 @@ import retrofit2.http.Path
 
 /**
  * Interface Retrofit pour appeler l'API de conversion des devises.
- * L'API permet de récupérer des taux de conversion au format JSON.
- *
- * Exemple d'endpoint : eur/gbp.json
- * L'URL finale est construite ainsi :
- * BASE_URL + "{from}/{to}.json"
- * où {from} et {to} sont les codes ISO des devises (ex: "eur", "gbp").
+ * Utilise le nouveau format de l'API : /currencies/{currencyCode}.json
  */
 interface CurrencyApiService {
 
     /**
-     * Récupère le taux de conversion entre deux devises.
+     * Récupère les taux de conversion pour une devise donnée.
      *
      * @param from Devise source (ex: "eur").
-     * @param to Devise cible (ex: "gbp").
-     * @return Un CurrencyResponse avec la date et le taux de conversion.
+     * @return Une réponse contenant les taux de conversion.
      *
-     * Exemple de requête : GET https://.../eur/gbp.json
+     * Exemple : GET /currencies/eur.json
      */
-    @GET("{from}/{to}.json")
+    @GET("currencies/{from}.json")
     suspend fun getRate(
-        @Path("from") from: String,
-        @Path("to") to: String
+        @Path("from") from: String
     ): CurrencyResponse
 }

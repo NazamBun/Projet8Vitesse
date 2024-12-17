@@ -238,7 +238,7 @@ class AddEditViewModel @Inject constructor(
         }
     }
 
-    // Vérification simple de l'email via un pattern
+    // Vérification de l'email via un pattern
     private fun isEmailValid(email: String): Boolean {
         val emailPattern = Pattern.compile(
             "^[A-Za-z0-9+_.-]+@(.+)$"

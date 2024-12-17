@@ -46,8 +46,8 @@ android {
 dependencies {
 
 
-    implementation("androidx.compose.foundation:foundation-layout-android:1.7.3")
-    implementation("com.google.firebase:firebase-inappmessaging-display:21.0.0")
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.firebase.inappmessaging.display)
     implementation(libs.androidx.media3.common.ktx)
     // Room
     val room_version = "2.6.1"
@@ -64,6 +64,7 @@ dependencies {
 
     //Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation (libs.converter.moshi)
     implementation(libs.converter.gson)
 
 
@@ -87,6 +88,11 @@ dependencies {
 
     // Java 8 Time (Instant)
     implementation(libs.jakewharton.threetenabp)
+
+    // Moshi JSON Library
+    implementation (libs.moshi)
+    implementation (libs.moshi.kotlin)
+    kapt (libs.moshi.kotlin.codegen)
 
 }
 kapt {

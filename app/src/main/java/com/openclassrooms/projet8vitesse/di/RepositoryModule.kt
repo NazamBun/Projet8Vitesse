@@ -4,8 +4,8 @@ import com.openclassrooms.projet8vitesse.data.repository.CandidateRepository
 import com.openclassrooms.projet8vitesse.data.repository.CandidateRepositoryImpl
 import com.openclassrooms.projet8vitesse.data.repository.CurrencyRepository
 import com.openclassrooms.projet8vitesse.data.repository.CurrencyRepositoryImpl
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -15,27 +15,25 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object RepositoryModule {
+abstract class RepositoryModule {
 
     /**
      * Fournit une instance de `CandidateRepository`.
      * @param repositoryImpl L'implémentation de CandidateRepository.
      */
-    @Provides
+    @Binds
     @Singleton
-    fun provideCandidateRepository(
+    abstract fun bindCandidateRepository(
         repositoryImpl: CandidateRepositoryImpl
-    ): CandidateRepository {
-        return repositoryImpl
-    }
+    ): CandidateRepository
 
     /**
      * Fournit une instance de `CurrencyRepository`.
-     * @param impl L'implémentation de CurrencyRepository.
+     * @param repositoryImpl L'implémentation de CurrencyRepository.
      */
-    @Provides
+    @Binds
     @Singleton
-    fun provideCurrencyRepository(
-        impl: CurrencyRepositoryImpl
-    ): CurrencyRepository = impl
+    abstract fun bindCurrencyRepository(
+        repositoryImpl: CurrencyRepositoryImpl
+    ): CurrencyRepository
 }

@@ -1,20 +1,21 @@
 package com.openclassrooms.projet8vitesse.data.remote
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
 
 /**
- * Classe de données pour représenter la réponse JSON de l'API de conversion de devises.
- * Format attendu :
- * {
- *   "date": "yyyy-MM-dd",
- *   "gbp": valeur (ex: 0.86)
- * }
+ * Classe représentant la réponse JSON pour les taux de conversion.
  *
- * Remarque : Le nom du champ dépend de la devise "to". Si c'est "gbp", on s'attend à un champ "gbp".
- * Dans ce cas, pour simplifier, supposons que vous savez toujours à l'avance quelle devise est ciblée.
- * Sinon, il faudrait un parsing plus dynamique.
+ * Exemple de réponse :
+ * {
+ *   "date": "2024-06-17",
+ *   "rates": {
+ *     "usd": 1.07,
+ *     "gbp": 0.85,
+ *     ...
+ *   }
+ * }
  */
 data class CurrencyResponse(
-    val date: String,
-    @SerializedName("gbp") val gbp: Double? // Si vous utilisez toujours gbp en devise cible.
+    @Json(name = "date") val date: String,                // Date de la réponse
+    @Json(name = "eur") val rates: Map<String, Double>    // Taux imbriqués sous "eur"
 )

@@ -1,5 +1,6 @@
 package com.openclassrooms.projet8vitesse.ui.detailscreen
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
@@ -69,6 +70,7 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             getCandidateByIdUseCase.execute(candidateId)
                 .catch { exception ->
+                    Log.e("DetailViewModel", "Error fetching candidate", exception)
                     _uiState.value = DetailUiState.Error(exception.message ?: "Erreur inconnue")
                 }
                 .collectLatest { candidate ->
@@ -77,11 +79,13 @@ class DetailViewModel @Inject constructor(
                     } else {
                         currentCandidate = candidate
                         val convertedSalary = try {
+                            Log.d("DetailViewModel", "Fetching conversion rate")
                             val rate = getConversionRateUseCase.execute()
+                            Log.d("DetailViewModel", "Conversion rate: $rate")
                             val converted = candidate.expectedSalary * rate
                             String.format("soit £ %.2f", converted)
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            Log.e("DetailViewModel", "Error converting salary", e)
                             // En cas de problème avec l'API, on met un fallback
                             "soit £ ??"
                         }
@@ -177,5 +181,4 @@ class DetailViewModel @Inject constructor(
         val fakeConversion = salaryInEuros * 0.86 // Juste pour illustrer, sans API réelle
         return String.format("soit £ %.2f", fakeConversion)
     }
-
 }
