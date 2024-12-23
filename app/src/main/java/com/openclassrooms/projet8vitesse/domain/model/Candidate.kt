@@ -9,7 +9,7 @@ data class Candidate(
     val id: Long? = null,
     val firstName: String = "",
     val lastName: String = "",
-    val photo: Bitmap? = null, // Autorise null pour éviter le problème de compatibilité
+    val photo: Bitmap? = null,
     val phoneNumber: String = "",
     val email: String = "",
     val dateOfBirth: Instant = Instant.EPOCH,
@@ -32,11 +32,7 @@ data class Candidate(
         )
     }
 
-    companion object {
-        fun fromDTO(candidateDto: CandidateDto): Candidate {
-            return candidateDto.toModel()
-        }
-    }
+
 
     private fun defaultPlaceholderBitmap(): Bitmap {
         // Crée un Bitmap par défaut ou charge une ressource

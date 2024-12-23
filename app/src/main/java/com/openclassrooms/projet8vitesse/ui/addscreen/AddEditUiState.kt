@@ -78,6 +78,8 @@ sealed class AddEditUiState {
         LAST_NAME,
         PHONE,
         EMAIL,
-        DATE_OF_BIRTH
+        DATE_OF_BIRTH,
+        EXPECTED_SALARY,
+        NOTES
     }
 }

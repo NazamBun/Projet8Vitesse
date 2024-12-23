@@ -156,7 +156,7 @@ class AddEditFragment : Fragment() {
                 viewModel.uiState.collectLatest { state ->
                     when (state) {
                         is AddEditUiState.Idle -> {
-                            // Rien de spécial
+
                         }
                         is AddEditUiState.Loading -> {
                             showLoading(true)
@@ -295,6 +295,8 @@ class AddEditFragment : Fragment() {
                 AddEditUiState.MandatoryField.PHONE -> binding.tilPhone.error = getString(R.string.mandatory_field_error)
                 AddEditUiState.MandatoryField.EMAIL -> binding.tilEmail.error = getString(R.string.mandatory_field_error)
                 AddEditUiState.MandatoryField.DATE_OF_BIRTH -> binding.tilAddEditDateOfBirth.error = getString(R.string.mandatory_field_error)
+                AddEditUiState.MandatoryField.EXPECTED_SALARY -> binding.tilSalary.error = getString(R.string.mandatory_field_error)
+                AddEditUiState.MandatoryField.NOTES -> binding.tilNotes.error = getString(R.string.mandatory_field_error)
             }
         }
     }
@@ -308,6 +310,8 @@ class AddEditFragment : Fragment() {
         binding.tilPhone.error = null
         binding.tilEmail.error = null
         binding.tilAddEditDateOfBirth.error = null
+        binding.tilSalary.error = null
+        binding.tilNotes.error = null
     }
 
     override fun onDestroyView() {

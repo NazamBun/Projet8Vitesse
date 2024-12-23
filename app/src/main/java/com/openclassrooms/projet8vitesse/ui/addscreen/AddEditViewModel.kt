@@ -28,7 +28,6 @@ import javax.inject.Inject
  * - MVVM : Ce ViewModel ne touche pas à l'UI directement, il expose un état (UiState).
  * - Clean Architecture : Le ViewModel dépend de Use Cases, pas de la couche de données directement.
  * - SOLID : Une seule responsabilité, pas de logique de navigation, pas de logique UI complexe.
- * - Code facile : Variables claires, commentaires simples, pas de complexité inutile.
  *
  * User stories (pour AddEditScreen) :
  * - Afficher une top app bar avec "Ajouter un candidat" ou "Modifier un candidat".
@@ -190,6 +189,8 @@ class AddEditViewModel @Inject constructor(
         if (phone.isBlank()) emptyFields.add(AddEditUiState.MandatoryField.PHONE)
         if (email.isBlank()) emptyFields.add(AddEditUiState.MandatoryField.EMAIL)
         if (dateOfBirth == null) emptyFields.add(AddEditUiState.MandatoryField.DATE_OF_BIRTH)
+        if (salary == null) emptyFields.add(AddEditUiState.MandatoryField.EXPECTED_SALARY)
+        if (notes.isBlank()) emptyFields.add(AddEditUiState.MandatoryField.NOTES)
 
         if (emptyFields.isNotEmpty()) {
             _uiState.value = AddEditUiState.ErrorMandatoryFields(

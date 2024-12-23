@@ -42,9 +42,11 @@ interface CandidateDao {
     @Query("DELETE FROM candidates")
     suspend fun deleteAllCandidates()
 
+    // Lire un candidat par son ID
     @Query("SELECT * FROM candidates WHERE id = :id ")
     fun getById(id: Long): Flow<CandidateDto?>
 
+    // Mettre à jour le statut de favori d'un candidat
     @Query("UPDATE candidates SET is_favorite = :favorite WHERE id = :id")
     suspend fun updateCandidate(id: Long, favorite: Boolean) : Int
 

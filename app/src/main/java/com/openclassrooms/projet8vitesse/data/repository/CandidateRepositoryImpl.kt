@@ -1,6 +1,5 @@
 package com.openclassrooms.projet8vitesse.data.repository
 
-import android.util.Log
 import com.openclassrooms.projet8vitesse.data.dao.CandidateDao
 import com.openclassrooms.projet8vitesse.domain.model.Candidate
 import kotlinx.coroutines.flow.Flow

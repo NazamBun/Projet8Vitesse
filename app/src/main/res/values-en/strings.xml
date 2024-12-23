@@ -43,5 +43,5 @@
     <string name="delete_confirmation">Confirmer</string>
     <string name="delete_cancel">Annuler</string>
     <string name="error_loading_image">Erreur chargement de l\'image</string>
-    <string name="mandatory_field_error">mandatory field error</string>
+    <string name="mandatory_field_error">Champs vide</string>
 </resources>
