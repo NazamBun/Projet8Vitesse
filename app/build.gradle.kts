@@ -44,11 +44,19 @@ android {
 }
 
 dependencies {
+    // Dépendances pour les tests instrumentés
+    androidTestImplementation (libs.androidx.core)
+    androidTestImplementation (libs.androidx.junit.v115)
+    androidTestImplementation (libs.androidx.espresso.core.v351)
 
+    // Pour coroutines test sur instrumentation
+    androidTestImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
 
     implementation(libs.androidx.foundation.layout.android)
     implementation(libs.firebase.inappmessaging.display)
     implementation(libs.androidx.media3.common.ktx)
+    implementation(libs.androidx.junit.ktx)
+    implementation(libs.androidx.monitor)
     // Room
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")

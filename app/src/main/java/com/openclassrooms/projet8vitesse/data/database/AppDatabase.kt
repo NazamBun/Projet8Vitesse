@@ -32,10 +32,10 @@ abstract class AppDatabase: RoomDatabase() {
             Log.d(TAG, "onCreate called")
             INSTANCE?.let { database ->
                 scope.launch {
-                    initDatabase(
-                        database.candidateDao()
+                        initDatabase(
+                            database.candidateDao()
 
-                    )
+                        )
                 }
             }
         }

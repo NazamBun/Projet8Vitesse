@@ -33,10 +33,8 @@ import kotlinx.coroutines.launch
 class HomeFragment : Fragment() {
 
     private val viewModel: HomeViewModel by viewModels()
-
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var candidateAdapter: CandidateAdapter
 
     override fun onCreateView(
@@ -54,7 +52,6 @@ class HomeFragment : Fragment() {
         setupTabLayout()
         setupSearchBar()
         observeViewModel()
-
 
         // Charger les candidats initiaux
         viewModel.loadCandidates()
@@ -136,9 +133,6 @@ class HomeFragment : Fragment() {
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
     }
-
-
-
 
 
     /**

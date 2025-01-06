@@ -10,17 +10,20 @@ sealed class HomeUiState {
     /**
      * État chargé lorsque les données sont en cours de chargement.
      */
+    // état initial
     data object Loading : HomeUiState()
 
     /**
      * État chargé lorsque la liste des candidats est vide.
      */
+    // état vide
     data object Empty : HomeUiState()
 
     /**
      * État chargé lorsque les candidats sont disponibles.
      * @param candidates Liste des candidats à afficher.
      */
+    // état succès
     data class Success(val candidates: List<Candidate>) : HomeUiState()
 
     /**

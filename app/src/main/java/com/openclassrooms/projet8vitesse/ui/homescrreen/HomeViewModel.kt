@@ -21,8 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getCandidateUseCase: GetCandidatesUseCase,
-    private val updateFavoriteStatusUseCase: UpdateFavoriteStatusUseCase,
-    private val getCandidateByIdUseCase: GetCandidateByIdUseCase
+    private val updateFavoriteStatusUseCase: UpdateFavoriteStatusUseCase
 ) : ViewModel() {
 
     // État de l'écran d'accueil
