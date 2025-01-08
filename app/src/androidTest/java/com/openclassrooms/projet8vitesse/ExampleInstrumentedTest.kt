@@ -22,3 +22,4 @@ class ExampleInstrumentedTest {
         assertEquals("com.openclassrooms.projet8vitesse", appContext.packageName)
     }
 }
+
